@@ -9,7 +9,7 @@ from std_msgs.msg import Int16MultiArray
 from ros_igtl_bridge.msg import igtlpoint, igtltransform, igtlstring
 IDLE = 0
 INIT = 1
-
+mm2count = 500.0/2.5349
 
 class Controller:
 
@@ -29,6 +29,15 @@ class Controller:
         self.MotorsReady = 0
         self.zTransReady = False
         self.zTrans = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
+
+    def mm2countsUSmotor(self,distance):
+        # 1 US motor rotation = 500 counts = 0.0998 inches =  2.53492 mm
+        return mm2count*distance
+
+    def counts2mmUSmotor(self,counts):
+        # 1 US motor rotation = 500 counts = 0.0998 inches =  2.53492 mm
+        return (1.0/mm2count)*counts
+
 
 ####################CALLBACKS
     def callbackString(self, data):
@@ -218,33 +227,36 @@ class Controller:
 
 
 
-
 def main():
     rospy.loginfo('Welcome to the Smart Template controller\n')
 
     controller = Controller()
     time.sleep(3)
-
     controller.OpenConnection()
+
 
     if controller.CheckController()==0:
         rospy.loginfo('Check Galil controller setup\nClosing the software')
         controller.TransferData.data = "Wrong Galil Config"
         controller.pub.publish(controller.TransferData)
 
-    controller.SendMovementInCounts(35,"A")
 
+#Initialization and homing
     while controller.state != INIT:
-        time.sleep(3)
+        time.sleep(0.3)
         print("waiting...")
-
-    print("recebeu!")
-
-
     if controller.InitiUSmotors():
         controller.MotorsReady = 1
     else:
-        print("Not ready")
+        print("US motor not ready")
+
+#Waiting for Zframe Registration
+    while controller.zTransReady == False:
+        time.sleep(3)
+        print("Waiting for zFrame Registration")
+
+
+#Waiting for
 
 
 

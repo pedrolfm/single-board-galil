@@ -1,0 +1,28 @@
+import numpy
+
+class target:
+    def __init__(self, zFrameMatrix):
+        self.HT_zRAS = zFrameMatrix
+        self.x = 0.0
+        self.y = 0.0
+        self.z = 0.0
+        # Transformation between Z frame and Robot - defined from the robot design
+        self.HT_rz = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
+        self.ready = False
+
+
+    def getTargetImageReferenceFrame(self):
+        return numpy.array([self.x , self.y, self.z])
+
+    def getTargetRobot(self):
+        RASTarget = numpy.matrix('0.0; 0.0 ; 0.0 ; 1.0')
+        RobotTarget  = numpy.matrix('0.0; 0.0 ; 0.0 ; 1.0')
+
+        RobotTarget = self.HT_rz*self.HT_zRAS*RASTarget
+        self.x = RobotTarget[0,0]
+        self.y = RobotTarget[1,0]
+        self.z = RobotTarget[2,0]
+
+
+
+
