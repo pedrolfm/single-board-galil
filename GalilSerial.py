@@ -7,8 +7,13 @@ import time
 
 from std_msgs.msg import Int16MultiArray
 from ros_igtl_bridge.msg import igtlpoint, igtltransform, igtlstring
+from utils import Target
+
 IDLE = 0
 INIT = 1
+TARGET = 2
+MOVE = 3
+
 mm2count = 500.0/2.5349
 
 class Controller:
@@ -27,8 +32,11 @@ class Controller:
         self.OrientationB = 0
         self.state = IDLE
         self.MotorsReady = 0
+        self.targetRAS = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
+        self.targetRobot = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
         self.zTransReady = False
         self.zTrans = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
+        self.target = Target()
 
     def mm2countsUSmotor(self,distance):
         # 1 US motor rotation = 500 counts = 0.0998 inches =  2.53492 mm
@@ -44,6 +52,8 @@ class Controller:
         rospy.loginfo(rospy.get_caller_id() + 'I heard %s', data.data)
         if data.data == "INIT":
             self.state = INIT
+        elif data.data == "MOVE":
+            self.state = MOVE
         else:
             self.state = IDLE
             rospy.loginfo('Invalid message, returning to IDLE state')
@@ -55,8 +65,12 @@ class Controller:
             pos = numpy.array([data.transform.translation.x,data.transform.translation.y,data.transform.translation.z])
             quat = numpy.array([data.transform.rotation.w, data.transform.rotation.x,data.transform.rotation.y,data.transform.rotation.z])
             self.zTrans = self.quaternion2HTrans(quat,pos)
-            print(self.zTrans)
-            print(data.transform.rotation)
+        elif data.name == "target":
+            self.state = TARGET
+            pos = numpy.array([data.transform.translation.x,data.transform.translation.y,data.transform.translation.z])
+            quat = numpy.array([data.transform.rotation.w, data.transform.rotation.x,data.transform.rotation.y,data.transform.rotation.z])
+            self.targetRAS = self.quaternion2HTrans(quat,pos)
+            self.target.setTargetRAS(self.targetRAS)
         else:
             self.state = IDLE
             rospy.loginfo('Invalid message, returning to IDLE state')
@@ -174,7 +188,7 @@ class Controller:
 
     def SendAbsolutePosition(self,Channel,X):
         try:
-            if self.AbsoluteMode == True:
+            if self.AbsoluteMode:
                 self.ser.write(str("PA%s %d\r" % Channel,X))
                 return 1
             else:
@@ -225,6 +239,16 @@ class Controller:
             rospy.loginfo("*** could not initialize motors ***")
             return 0
 
+    def defineTargetRobot(self):
+        #Get target (x,y,z)
+        if self.target.self.HT_RAS_Target[0,3] != 0.0 and target.self.HT_RAS_Target[1,3] != 0.0 and target.self.HT_RAS_Target[2,3] != 0.0:
+            return self.target.defineTargetRobot(self.zTrans)
+        else:
+            self.TransferData.data = "Please check the target location"
+            self.pub.publish(controller.TransferData)
+            return 0
+
+
 
 
 def main():
@@ -233,12 +257,42 @@ def main():
     controller = Controller()
     time.sleep(3)
     controller.OpenConnection()
-
-
     if controller.CheckController()==0:
         rospy.loginfo('Check Galil controller setup\nClosing the software')
         controller.TransferData.data = "Wrong Galil Config"
         controller.pub.publish(controller.TransferData)
+
+    while controller.ser.is_open():
+
+        while controller.state == IDLE:
+            rospy.loginfo("*** waiting ***")
+
+
+        if controller.state == INIT:
+            if controller.InitiUSmotors():
+                controller.MotorsReady = 1
+                controller.state = IDLE
+            else:
+                rospy.loginfo("US motor not ready")
+                controller.state = IDLE
+
+        if controller.state == TARGET and controller.zTransReady:
+            if controller.defineTargetRobot():
+                rospy.loginfo("Target set, waiting for command")
+                controller.state = IDLE
+            else:
+                rospy.loginfo("Check target location and try again")
+                controller.state = IDLE
+
+        if controller.state == MOVE and controller.target.ready == True:
+#F00azer aqui o codigo que move o robo pra posicao desejada
+
+
+
+
+
+
+
 
 
 #Initialization and homing
