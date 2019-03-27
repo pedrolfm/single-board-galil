@@ -178,8 +178,8 @@ class Controller:
 
     def SetAbsoluteMotion(self,Channel):
         try:
-            self.ser.write(str("DP%s 0\r" % Channel))
-            self.ser.write(str("PT%s 1\r" % Channel))
+            self.ser.write(str("DP%s=0\r" % Channel))
+            self.ser.write(str("PT%s=1\r" % Channel))
             self.AbsoluteMode = True
             return 1
         except:
@@ -189,7 +189,7 @@ class Controller:
     def SendAbsolutePosition(self,Channel,X):
         try:
             if self.AbsoluteMode:
-                self.ser.write(str("PA%s %d\r" % Channel,X))
+                self.ser.write(str("PA%s=%d\r" % Channel,X))
                 return 1
             else:
                 print("*** PA not available ***")
@@ -268,7 +268,14 @@ def main():
             rospy.loginfo("*** waiting ***")
 
 
+#TESTING the BBB and Piezomotors
         if controller.state == INIT:
+
+            controller.SetAbsoluteMotion("C")
+            controller.SendAbsolutePosition("C",1000)
+            time.sleep(0.9)
+
+
             if controller.InitiUSmotors():
                 controller.MotorsReady = 1
                 controller.state = IDLE
