@@ -187,9 +187,12 @@ class Controller:
             return 0
 
     def SendAbsolutePosition(self,Channel,X):
+#        print(self.AbsoluteMode)
+#        print(str("PA%s=%d\r" % (Channel,X)))
         try:
             if self.AbsoluteMode:
-                self.ser.write(str("PA%s=%d\r" % Channel,X))
+                self.ser.write(str("PA%s=%d\r" % (Channel,X)))
+ #               print(str("PA%s=%d\r" % Channel,X))
                 return 1
             else:
                 print("*** PA not available ***")
@@ -262,26 +265,31 @@ def main():
         controller.TransferData.data = "Wrong Galil Config"
         controller.pub.publish(controller.TransferData)
 
-    while controller.ser.is_open():
+    while 1:
 
         while controller.state == IDLE:
             rospy.loginfo("*** waiting ***")
 
-
+        controller.SetAbsoluteMotion("C")
+        time.sleep(0.3)
 #TESTING the BBB and Piezomotors
         if controller.state == INIT:
 
-            controller.SetAbsoluteMotion("C")
+        #    controller.SetAbsoluteMotion("C")
+         #   time.sleep(0.3)
+            controller.SendAbsolutePosition("C",-1000)
+            time.sleep(10.9)
             controller.SendAbsolutePosition("C",1000)
-            time.sleep(0.9)
+            time.sleep(10.9)
 
+            controller.state = IDLE
 
-            if controller.InitiUSmotors():
-                controller.MotorsReady = 1
-                controller.state = IDLE
-            else:
-                rospy.loginfo("US motor not ready")
-                controller.state = IDLE
+#            if controller.InitiUSmotors():
+#                controller.MotorsReady = 1
+#                controller.state = IDLE
+#            else:
+#                rospy.loginfo("US motor not ready")
+#                controller.state = IDLE
 
         if controller.state == TARGET and controller.zTransReady:
             if controller.defineTargetRobot():
@@ -293,39 +301,8 @@ def main():
 
         if controller.state == MOVE and controller.target.ready == True:
 #F00azer aqui o codigo que move o robo pra posicao desejada
-
-
-
-
-
-
-
-
-
-#Initialization and homing
-    while controller.state != INIT:
-        time.sleep(0.3)
-        print("waiting...")
-    if controller.InitiUSmotors():
-        controller.MotorsReady = 1
-    else:
-        print("US motor not ready")
-
-#Waiting for Zframe Registration
-    while controller.zTransReady == False:
-        time.sleep(3)
-        print("Waiting for zFrame Registration")
-
-
-#Waiting for
-
-
-
-
-
-
-    ser.close()
-    print(ser.is_open)# close port
+            print("acabou")
 
 if __name__ == '__main__':
     main()
+ 
