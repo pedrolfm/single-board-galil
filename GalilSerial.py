@@ -61,10 +61,10 @@ class Controller:
     def callbackTransformation(self, data):
         rospy.loginfo(rospy.get_caller_id() + 'I heard')
         if data.name == "zTrans":
-            self.zTransReady = True
             pos = numpy.array([data.transform.translation.x,data.transform.translation.y,data.transform.translation.z])
             quat = numpy.array([data.transform.rotation.w, data.transform.rotation.x,data.transform.rotation.y,data.transform.rotation.z])
             self.zTrans = self.quaternion2HTrans(quat,pos)
+            self.zTransReady = True
         elif data.name == "target":
             self.state = TARGET
             pos = numpy.array([data.transform.translation.x,data.transform.translation.y,data.transform.translation.z])
@@ -105,11 +105,7 @@ class Controller:
         except:
             rospy.loginfo("\n*** could not open the serial communication ***\n")
             return 0
-        if self.ser.is_open():
-            return 1
-        else:
-            rospy.loginfo("\n*** could not open the serial fd  communication ***\n")
-            return 0
+
 
     def SendMovementInCounts(self,X,Channel):
         try:
@@ -187,12 +183,9 @@ class Controller:
             return 0
 
     def SendAbsolutePosition(self,Channel,X):
-#        print(self.AbsoluteMode)
-#        print(str("PA%s=%d\r" % (Channel,X)))
         try:
             if self.AbsoluteMode:
                 self.ser.write(str("PA%s=%d\r" % (Channel,X)))
- #               print(str("PA%s=%d\r" % Channel,X))
                 return 1
             else:
                 print("*** PA not available ***")
@@ -211,7 +204,7 @@ class Controller:
             #LRA = self.ser.read(bytesToRead)
             #print(LRA)
             #print(float(LRA))
-            print("aqui 1")
+
             self.ser.write(str("PR 1000,1000\r")) #Check the values depending on the hardware
             #self.ser.write(str("BG \r"))
             time.sleep(1)
@@ -234,8 +227,8 @@ class Controller:
                 LRBstring = self.ser.read(4)
                 LRB = float(LRBstring)
 
-            self.ser.write(str("DPA 0\r"))
-            self.ser.write(str("DPB 0\r"))
+            self.ser.write(str("DPA = 0\r"))
+            self.ser.write(str("DPB = 0\r"))
             rospy.loginfo("*** initialization done***")
             return 1
         except:
@@ -244,11 +237,12 @@ class Controller:
 
     def defineTargetRobot(self):
         #Get target (x,y,z)
-        if self.target.self.HT_RAS_Target[0,3] != 0.0 and target.self.HT_RAS_Target[1,3] != 0.0 and target.self.HT_RAS_Target[2,3] != 0.0:
+        if self.target.HT_RAS_Target[0,3] != 0.0 and self.target.HT_RAS_Target[1,3] != 0.0 and self.target.HT_RAS_Target[2,3] != 0.0:
+            self.target.definePositionPiezo()
             return self.target.defineTargetRobot(self.zTrans)
         else:
             self.TransferData.data = "Please check the target location"
-            self.pub.publish(controller.TransferData)
+            self.pub.publish(self.TransferData)
             return 0
 
 
@@ -270,26 +264,15 @@ def main():
         while controller.state == IDLE:
             rospy.loginfo("*** waiting ***")
 
-        controller.SetAbsoluteMotion("C")
-        time.sleep(0.3)
-#TESTING the BBB and Piezomotors
+
         if controller.state == INIT:
 
-        #    controller.SetAbsoluteMotion("C")
-         #   time.sleep(0.3)
-            controller.SendAbsolutePosition("C",-1000)
-            time.sleep(10.9)
-            controller.SendAbsolutePosition("C",1000)
-            time.sleep(10.9)
-
-            controller.state = IDLE
-
-#            if controller.InitiUSmotors():
-#                controller.MotorsReady = 1
-#                controller.state = IDLE
-#            else:
-#                rospy.loginfo("US motor not ready")
-#                controller.state = IDLE
+            if controller.InitiUSmotors():
+                controller.MotorsReady = 1
+                controller.state = IDLE
+            else:
+                rospy.loginfo("US motor not ready")
+                controller.state = IDLE
 
         if controller.state == TARGET and controller.zTransReady:
             if controller.defineTargetRobot():
