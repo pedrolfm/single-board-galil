@@ -13,6 +13,8 @@ IDLE = 0
 INIT = 1
 TARGET = 2
 MOVE = 3
+PIEZO_INIT_VERTICAL = 0
+PIEZO_INIT_HORIZONTAL = 0
 
 mm2count = 500.0/2.5349
 
@@ -195,16 +197,8 @@ class Controller:
             print("*** could not send command ***")
             return 0
 
-#TODO: All motors
     def InitiUSmotors(self):
         try:
-            #self.ser.flushInput()
-            #self.ser.write(str("MG _LRA\r"))
-            #bytesToRead = self.ser.inWaiting()
-            #LRA = self.ser.read(bytesToRead)
-            #print(LRA)
-            #print(float(LRA))
-
             self.ser.write(str("PR 1000,1000\r")) #Check the values depending on the hardware
             #self.ser.write(str("BG \r"))
             time.sleep(1)
@@ -234,6 +228,33 @@ class Controller:
         except:
             rospy.loginfo("*** could not initialize motors ***")
             return 0
+
+    def InitiPiezo(self):
+        try:
+
+            self.ser.write(str("JG  500 500 500 500\r")) #Set the speed and direction for the first phase of the FI move
+            time.sleep(0.01)
+            self.ser.write(str("HV  300 300 300 300\r"))
+            time.sleep(0.01)
+            self.ser.write(str("FI CD\r"))
+            time.sleep(0.01)
+            self.ser.write(str("BG C\r"))
+            time.sleep(10.0)
+            self.ser.write(str("BG D\r"))
+            time.sleep(10.0)
+
+
+            self.ser.write(str("PRC=%d\r" % (PIEZO_INIT_VERTICAL)))
+            time.sleep(5.0)
+            self.ser.write(str("PRD=%d\r" % (PIEZO_INIT_HORIZONTAL)))
+            time.sleep(5.0)
+            rospy.loginfo("*** initialization done***")
+            return 1
+        except:
+            rospy.loginfo("*** could not initialize motors ***")
+            return 0
+
+
 
     def defineTargetRobot(self):
         #Get target (x,y,z)
@@ -267,7 +288,7 @@ def main():
 
         if controller.state == INIT:
 
-            if controller.InitiUSmotors():
+            if controller.InitiUSmotors() and controller.InitiPiezo():
                 controller.MotorsReady = 1
                 controller.state = IDLE
             else:
