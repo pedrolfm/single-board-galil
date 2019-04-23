@@ -275,6 +275,7 @@ def main():
                 controller.state = IDLE
 
         if controller.state == TARGET and controller.zTransReady:
+            print("chegou aqui")
             if controller.defineTargetRobot():
                 rospy.loginfo("Target set, waiting for command")
                 controller.state = IDLE

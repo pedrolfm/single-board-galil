@@ -1,7 +1,7 @@
 import numpy
 
 D1 = 13.52
-
+D2 = 44.50
 class Target:
     def __init__(self):
         self.HT_RAS_zFrame = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
@@ -32,6 +32,7 @@ class Target:
         self.x = self.HT_zFrame_Target[0,3] + self.piezo[0]
         self.y = self.HT_zFrame_Target[1,3] + self.piezo[1]
         self.z = self.HT_zFrame_Target[2,3]
+        print(self.HT_zFrame_Target)
         if numpy.linalg.det(self.HT_zFrame_Target[0:3,0:3]) == 1.0:
             self.ready = True
             return 1
@@ -41,9 +42,9 @@ class Target:
 
     def getInsertionAngle(self):
 
-        self.teta = numpy.atan2(-self.HT_RAS_Target[2,0],numpy.sqrt(self.HT_RAS_Target[0,0]^2+self.HT_RAS_Target[1,0]^2))
-        self.gamma = numpy.atan2(self.HT_RAS_Target[1,0]/cos(teta),self.HT_RAS_Target[0,0]/cos(teta))
-        self.phi = numpy.atan2(self.HT_RAS_Target[2,1]/cos(teta),self.HT_RAS_Target[2,2]/cos(teta))
+        self.teta = numpy.arctan2(-self.HT_RAS_Target[2,0],numpy.sqrt(self.HT_RAS_Target[0,0]*self.HT_RAS_Target[0,0]+self.HT_RAS_Target[1,0]*self.HT_RAS_Target[1,0]))
+        self.gamma = numpy.arctan2(self.HT_RAS_Target[1,0]/numpy.cos(self.teta),self.HT_RAS_Target[0,0]/numpy.cos(self.teta))
+        self.phi = numpy.arctan2(self.HT_RAS_Target[2,1]/numpy.cos(self.teta),self.HT_RAS_Target[2,2]/numpy.cos(self.teta))
 
         return #numpy.array([teta , gamma, phi])
 
@@ -52,13 +53,11 @@ class Target:
         self.getInsertionAngle()
 
         #We need to check again the orientation of the movement.
-        self.piezo = numpy.array([D1*numpy.tan(self.gamma) , D1 * numpy.tan(self.teta)])
-
+        self.piezo = numpy.array([D1*numpy.tan(self.teta) , D1 * numpy.tan(self.phi)])
+        print(self.piezo)
         #Caclulate the bias:
-        D3 = D2 - numpy.sqrt(self.piezo[0]^2+self.piezo[1]^2+D1^2)
+        D3 = D2 - numpy.sqrt(self.piezo[0]*self.piezo[0]+self.piezo[1]*self.piezo[1]+D1*D1)
         self.piezo_bias = numpy.array([D3*numpy.sin(self.gamma) + self.piezo[0] , D3*numpy.sin(self.teta)])
-
-
 
 
 
