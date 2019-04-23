@@ -283,7 +283,8 @@ def main():
     while 1:
 
         while controller.state == IDLE:
-            rospy.loginfo("*** waiting ***")
+            #rospy.loginfo("*** waiting ***")
+            time.sleep(0.01)
 
 
         if controller.state == INIT:
