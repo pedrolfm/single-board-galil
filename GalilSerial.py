@@ -35,6 +35,7 @@ class Controller:
         self.state = IDLE
         self.MotorsReady = 0
         self.targetRAS = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
+        self.targetRAS_angle = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
         self.targetRobot = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
         self.zTransReady = False
         self.zTrans = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
@@ -73,6 +74,14 @@ class Controller:
             quat = numpy.array([data.transform.rotation.w, data.transform.rotation.x,data.transform.rotation.y,data.transform.rotation.z])
             self.targetRAS = self.quaternion2HTrans(quat,pos)
             self.target.setTargetRAS(self.targetRAS)
+        elif data.name == "angle":
+            self.state = TARGET
+            pos = numpy.array(
+                [data.transform.translation.x, data.transform.translation.y, data.transform.translation.z])
+            quat = numpy.array([data.transform.rotation.w, data.transform.rotation.x, data.transform.rotation.y,
+                                data.transform.rotation.z])
+            self.targetRAS_angle = self.quaternion2HTrans(quat, pos)
+            self.target.setTargetRAS_angle(self.targetRAS_angle)
         else:
             self.state = IDLE
             rospy.loginfo('Invalid message, returning to IDLE state')
@@ -265,7 +274,6 @@ class Controller:
         else:
             rospy.loginfo( "Please check the target location")
             return 0
-
 
 
 
