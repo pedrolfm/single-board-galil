@@ -13,6 +13,8 @@ IDLE = 0
 INIT = 1
 TARGET = 2
 MOVE = 3
+PIEZO_INIT_VERTICAL = 0
+PIEZO_INIT_HORIZONTAL = 0
 
 mm2count = 500.0/2.5349
 
@@ -195,16 +197,8 @@ class Controller:
             print("*** could not send command ***")
             return 0
 
-#TODO: All motors
     def InitiUSmotors(self):
         try:
-            #self.ser.flushInput()
-            #self.ser.write(str("MG _LRA\r"))
-            #bytesToRead = self.ser.inWaiting()
-            #LRA = self.ser.read(bytesToRead)
-            #print(LRA)
-            #print(float(LRA))
-
             self.ser.write(str("PR 1000,1000\r")) #Check the values depending on the hardware
             #self.ser.write(str("BG \r"))
             time.sleep(1)
@@ -235,14 +229,41 @@ class Controller:
             rospy.loginfo("*** could not initialize motors ***")
             return 0
 
+    def InitiPiezo(self):
+        try:
+
+            self.ser.write(str("JG  500 500 500 500\r")) #Set the speed and direction for the first phase of the FI move
+            time.sleep(0.01)
+            self.ser.write(str("HV  300 300 300 300\r"))
+            time.sleep(0.01)
+            self.ser.write(str("FI CD\r"))
+            time.sleep(0.01)
+            self.ser.write(str("BG C\r"))
+            time.sleep(10.0)
+            self.ser.write(str("BG D\r"))
+            time.sleep(10.0)
+
+
+            self.ser.write(str("PRC=%d\r" % (PIEZO_INIT_VERTICAL)))
+            time.sleep(5.0)
+            self.ser.write(str("PRD=%d\r" % (PIEZO_INIT_HORIZONTAL)))
+            time.sleep(5.0)
+            rospy.loginfo("*** initialization done***")
+            return 1
+        except:
+            rospy.loginfo("*** could not initialize motors ***")
+            return 0
+
+
+
     def defineTargetRobot(self):
         #Get target (x,y,z)
         if self.target.HT_RAS_Target[0,3] != 0.0 and self.target.HT_RAS_Target[1,3] != 0.0 and self.target.HT_RAS_Target[2,3] != 0.0:
+#            self.target.setTargetRAS(self.target.HT_RAS_Target)
             self.target.definePositionPiezo()
             return self.target.defineTargetRobot(self.zTrans)
         else:
-            self.TransferData.data = "Please check the target location"
-            self.pub.publish(self.TransferData)
+            rospy.loginfo( "Please check the target location")
             return 0
 
 
@@ -262,12 +283,13 @@ def main():
     while 1:
 
         while controller.state == IDLE:
-            rospy.loginfo("*** waiting ***")
+            #rospy.loginfo("*** waiting ***")
+            time.sleep(0.01)
 
 
         if controller.state == INIT:
 
-            if controller.InitiUSmotors():
+            if controller.InitiUSmotors() and controller.InitiPiezo():
                 controller.MotorsReady = 1
                 controller.state = IDLE
             else:
@@ -275,7 +297,6 @@ def main():
                 controller.state = IDLE
 
         if controller.state == TARGET and controller.zTransReady:
-            print("chegou aqui")
             if controller.defineTargetRobot():
                 rospy.loginfo("Target set, waiting for command")
                 controller.state = IDLE
