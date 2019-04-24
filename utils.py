@@ -40,20 +40,22 @@ class Target:
 
         #Compensate the bias due to the piezo motion and angulation:
 
-        diff_horizontal = self.HT_zFrame_Target[0,3]*numpy.tan(self.phi)
-        diff_vertical = self.HT_zFrame_Target[0, 3] * numpy.tan(self.phi)
+        diff_horizontal = self.HT_zFrame_Target[2,3]*numpy.tan(self.phi)
+        diff_vertical = self.HT_zFrame_Target[2, 3] * numpy.tan(self.teta)
+        print("Difference: %f, %f." % (diff_horizontal, diff_vertical))
 
-
-        self.x = self.HT_zFrame_Target[0,3] + self.piezo[0] + diff_horizontal
-        self.y = self.HT_zFrame_Target[1,3] + self.piezo[1] + diff_vertical
+        self.x = self.HT_zFrame_Target[0,3] + self.piezo[1] + diff_horizontal
+        self.y = self.HT_zFrame_Target[1,3] + self.piezo[0] + diff_vertical
         self.z = self.HT_zFrame_Target[2,3]
-        print(self.HT_zFrame_Target)
+        print(self.HT_RAS_Target)
+        print("===")
+        print(self.HT_RAS_zFrame)
         print("Positions %f, %f, %f." % (self.x, self.y, self.z))
-        if numpy.linalg.det(self.HT_zFrame_Target[0:3,0:3]) == 1.0:
-            self.ready = True
-            return 1
-        else:
-            return 0
+#        if numpy.linalg.det(self.HT_zFrame_Target[0:3,0:3]) == 1.0:
+#            self.ready = True
+        return 1
+#        else:
+#        return 0
 
 
     def getInsertionAngle(self):
