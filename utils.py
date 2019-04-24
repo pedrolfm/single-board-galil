@@ -38,9 +38,14 @@ class Target:
         inv_HT_RAS_zFrame = numpy.linalg.inv(self.HT_RAS_zFrame)
         self.HT_zFrame_Target = inv_HT_RAS_zFrame*self.HT_RAS_Target
 
-        #Compensate the bias due to the piezo motion:
-        self.x = self.HT_zFrame_Target[0,3] + self.piezo[0]
-        self.y = self.HT_zFrame_Target[1,3] + self.piezo[1]
+        #Compensate the bias due to the piezo motion and angulation:
+
+        diff_horizontal = self.HT_zFrame_Target[0,3]*numpy.tan(self.phi)
+        diff_vertical = self.HT_zFrame_Target[0, 3] * numpy.tan(self.phi)
+
+
+        self.x = self.HT_zFrame_Target[0,3] + self.piezo[0] + diff_horizontal
+        self.y = self.HT_zFrame_Target[1,3] + self.piezo[1] + diff_vertical
         self.z = self.HT_zFrame_Target[2,3]
         print(self.HT_zFrame_Target)
         print("Positions %f, %f, %f." % (self.x, self.y, self.z))

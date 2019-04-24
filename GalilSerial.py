@@ -18,6 +18,8 @@ PIEZO_INIT_HORIZONTAL = 0
 
 mm2count = 500.0/2.5349
 
+Piezomm2count = 5500.0/16.51
+
 class Controller:
 
     def __init__(self):
@@ -49,6 +51,13 @@ class Controller:
         # 1 US motor rotation = 500 counts = 0.0998 inches =  2.53492 mm
         return (1.0/mm2count)*counts
 
+    def mm2countsPiezomotor(self,distance):
+        # Still need to define the best relationship
+        return Piezomm2count*distance
+
+    def counts2mmPiezomotor(self,counts):
+        # Still need to define the best relationship
+        return (1.0/Piezomm2count)*counts
 
 ####################CALLBACKS
     def callbackString(self, data):
@@ -230,8 +239,6 @@ class Controller:
                 LRBstring = self.ser.read(4)
                 LRB = float(LRBstring)
 
-            self.ser.write(str("DPA = 0\r"))
-            self.ser.write(str("DPB = 0\r"))
             rospy.loginfo("*** initialization done***")
             return 1
         except:
@@ -298,6 +305,10 @@ def main():
         if controller.state == INIT:
 
             if controller.InitiUSmotors() and controller.InitiPiezo():
+                controller.SetAbsoluteMotion('A')
+                controller.SetAbsoluteMotion('B')
+                controller.SetAbsoluteMotion('C')
+                controller.SetAbsoluteMotion('D')
                 controller.MotorsReady = 1
                 controller.state = IDLE
             else:
@@ -307,13 +318,28 @@ def main():
         if controller.state == TARGET and controller.zTransReady:
             if controller.defineTargetRobot():
                 rospy.loginfo("Target set, waiting for command")
+                rospy.loginfo("Movement axis A: %f counts" % (controller.mm2countsUSmotor(controller.target.x)))
+                rospy.loginfo("Movement axis B: %f counts" % (controller.mm2countsUSmotor(controller.target.y)))
+                rospy.loginfo("Movement axis C: %f counts" % (controller.mm2countsUSmotor(controller.target.piezo[0])))
+                rospy.loginfo("Movement axis D: %f counts" % (controller.mm2countsUSmotor(controller.target.piezo[1])))
+
                 controller.state = IDLE
             else:
                 rospy.loginfo("Check target location and try again")
                 controller.state = IDLE
 
         if controller.state == MOVE and controller.target.ready == True:
-#F00azer aqui o codigo que move o robo pra posicao desejada
+
+            controller.SendAbsolutePosition('A',controller.mm2countsUSmotor(controller.target.x))
+            time.sleep(0.01)
+            controller.SendAbsolutePosition('B',controller.mm2countsUSmotor(controller.target.y))
+            time.sleep(0.01)
+            controller.SendAbsolutePosition('C', controller.mm2countsPiezomotor(controller.target.piezo[0]))
+            time.sleep(0.01)
+            controller.SendAbsolutePosition('D', controller.mm2countsPiezomotor(controller.target.piezo[1]))
+            time.sleep(0.01)
+
+
             print("acabou")
 
 if __name__ == '__main__':
