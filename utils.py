@@ -5,72 +5,64 @@ D2 = 44.50
 
 class Target:
     def __init__(self):
-        self.HT_RAS_zFrame = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
-        self.HT_RAS_Target = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
-        self.HT_zFrame_Target = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
+        self.ht_zframe_base = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0') #TODO: Input numbers
+        self.ht_RAS_zframe = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
+        self.ht_RAS_target = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
+        self.ht_zframe_target = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
+        self.ht_RAS_target_angle = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
         self.x = 0.0
         self.y = 0.0
         self.z = 0.0
-        # Transformation between Z frame and Robot - defined from the robot design
-        self.HT_rz = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
+
         self.ready = False
 
 
-    def getTargetRAS(self):
+    def get_target_RAS(self):
         return numpy.array([self.x , self.y, self.z])
 
-    def setTargetRAS(self,pos):
-        self.HT_RAS_Target = pos
+    def set_target_RAS(self,pos):
+        self.ht_RAS_target = pos
 
-    def setTargetRAS_angle(self,pos):
-        self.HT_RAS_Target_angle = pos
+    def set_target_RAS_angle(self,ang):
+        self.ht_RAS_target_angle = ang
 
-    def defineTargetRobot(self,zFrameMatrix):
-        self.HT_RAS_zFrame = zFrameMatrix
-        self.getInsertionAngle()
-        print(self.phi)
-        print(self.teta)
-        print(self.gamma)
-        self.definePositionPiezo()
-        self.HT_zRAS = zFrameMatrix
+    def define_target_robot(self,zframe_matrix):
+        self.HT_RAS_zFrame = zframe_matrix #TODO: Name convention
+        self.get_insertion_angle()
+        self.define_position_piezo()
 
-        # TODO: Add the Transformation between Z frame and Robot - defined from the robot design
-        inv_HT_RAS_zFrame = numpy.linalg.inv(self.HT_RAS_zFrame)
-        self.HT_zFrame_Target = inv_HT_RAS_zFrame*self.HT_RAS_Target
+        inv_ht_RAS_zFrame = numpy.linalg.inv(self.ht_RAS_zframe*self.ht_zframe_base)
+        self.ht_zframe_target = inv_ht_RAS_zFrame*self.ht_RAS_target
+
+
 
         #Compensate the bias due to the piezo motion and angulation:
 
-        diff_horizontal = self.HT_zFrame_Target[2,3]*numpy.tan(self.phi)
-        diff_vertical = self.HT_zFrame_Target[2, 3] * numpy.tan(self.teta)
+        diff_horizontal = self.ht_zframe_target[2,3]*numpy.tan(self.phi)
+        diff_vertical = self.ht_zframe_target[2, 3] * numpy.tan(self.teta)
         print("Difference: %f, %f." % (diff_horizontal, diff_vertical))
 
-        self.x = self.HT_zFrame_Target[0,3] + self.piezo[1] + diff_horizontal
-        self.y = self.HT_zFrame_Target[1,3] + self.piezo[0] + diff_vertical
-        self.z = self.HT_zFrame_Target[2,3]
-        print(self.HT_RAS_Target)
-        print("===")
-        print(self.HT_RAS_zFrame)
-        print("Positions %f, %f, %f." % (self.x, self.y, self.z))
-#        if numpy.linalg.det(self.HT_zFrame_Target[0:3,0:3]) == 1.0:
-#            self.ready = True
+        self.x = self.ht_zframe_target[0,3] + self.piezo[1] + diff_horizontal
+        self.y = self.ht_zframe_target[1,3] + self.piezo[0] + diff_vertical
+        self.z = self.ht_zframe_target[2,3]
+
         return 1
-#        else:
-#        return 0
 
 
-    def getInsertionAngle(self):
 
-        self.teta = numpy.arctan2(-self.HT_RAS_Target_angle[2,0],numpy.sqrt(self.HT_RAS_Target_angle[0,0]*self.HT_RAS_Target_angle[0,0]+self.HT_RAS_Target_angle[1,0]*self.HT_RAS_Target_angle[1,0]))
-        self.gamma = numpy.arctan2(self.HT_RAS_Target_angle[1,0]/numpy.cos(self.teta),self.HT_RAS_Target_angle[0,0]/numpy.cos(self.teta))
-        self.phi = numpy.arctan2(self.HT_RAS_Target_angle[2,1]/numpy.cos(self.teta),self.HT_RAS_Target_angle[2,2]/numpy.cos(self.teta))
+    def get_insertion_angle(self):
+
+        self.teta = numpy.arctan2(-self.ht_RAS_target_angle[2,0],numpy.sqrt(self.ht_RAS_target_angle[0,0]*self.ht_RAS_target_angle[0,0]+self.ht_RAS_target_angle[1,0]*self.ht_RAS_target_angle[1,0]))
+        self.gamma = numpy.arctan2(self.ht_RAS_target_angle[1,0]/numpy.cos(self.teta),self.ht_RAS_target_angle[0,0]/numpy.cos(self.teta))
+        self.phi = numpy.arctan2(self.ht_RAS_target_angle[2,1]/numpy.cos(self.teta),self.ht_RAS_target_angle[2,2]/numpy.cos(self.teta))
 
         return
 
 
-    def definePositionPiezo(self):
-        self.getInsertionAngle()
+    def define_position_piezo(self):
+        self.get_insertion_angle()
 
-        #We need to check again the orientation of the movement.
+
         self.piezo = numpy.array([D1*numpy.tan(self.teta) , D1 * numpy.tan(self.phi)])
         print(self.piezo)
         #Caclulate the bias:

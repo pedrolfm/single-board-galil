@@ -288,7 +288,8 @@ def main():
 
     control = Controller()
     time.sleep(3)
-    control.open_connection()
+    print("testing the BBB on My LT")
+    #control.open_connection()
     if control.check_controller()==0:
         rospy.loginfo('Check Galil controller setup\nClosing the software')
         control.TransferData.data = "Wrong Galil Config"
