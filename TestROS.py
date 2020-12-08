@@ -71,11 +71,15 @@ class Controller:
             rospy.loginfo('Invalid message, returning to IDLE state')
 
     def callbackTransformation(self, data):
+        #test
+        rotation = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 0.0 -1.0 0.0 ; 0.0 1.0 0.0 0.0; 0.0 0.0 0.0 1.0')
+        
         rospy.loginfo(rospy.get_caller_id() + 'I heard')
         if data.name == "zTrans":
             pos = numpy.array([data.transform.translation.x,data.transform.translation.y,data.transform.translation.z])
             quat = numpy.array([data.transform.rotation.w, data.transform.rotation.x,data.transform.rotation.y,data.transform.rotation.z])
             self.zTrans = self.quaternion2ht(quat,pos)
+            print(self.zTrans*rotation)
             self.zTransReady = True
         elif data.name == "target":
             self.state = TARGET
