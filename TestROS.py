@@ -4,6 +4,7 @@ import rospy
 import numpy
 import serial
 import time
+import sys
 
 from std_msgs.msg import Int16MultiArray
 from ros_igtl_bridge.msg import igtlpoint, igtltransform, igtlstring
@@ -27,7 +28,7 @@ class Controller:
         rospy.Subscriber('IGTL_STRING_IN', igtlstring, self.callbackString)
         rospy.Subscriber('IGTL_TRANSFORM_IN', igtltransform, self.callbackTransformation)
         self.pub = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
-        rospy.init_node('talker', anonymous=True)
+#        rospy.init_node('talker', anonymous=True)
         # Define the variables
         self.TransferData = igtlstring()
         self.CartesianPositionA = 0
@@ -72,14 +73,15 @@ class Controller:
 
     def callbackTransformation(self, data):
         #test
-        rotation = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 0.0 -1.0 0.0 ; 0.0 1.0 0.0 0.0; 0.0 0.0 0.0 1.0')
-        
+        rotation = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 0.0 1.0 0.0 ; 0.0 -1.0 0.0 0.0; 0.0 0.0 0.0 1.0')
+        translation = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 50.0 ; 0.0 0.0 1.0 -100.0; 0.0 0.0 0.0 1.0')
+
         rospy.loginfo(rospy.get_caller_id() + 'I heard')
         if data.name == "zTrans":
             pos = numpy.array([data.transform.translation.x,data.transform.translation.y,data.transform.translation.z])
             quat = numpy.array([data.transform.rotation.w, data.transform.rotation.x,data.transform.rotation.y,data.transform.rotation.z])
             self.zTrans = self.quaternion2ht(quat,pos)
-            print(self.zTrans*rotation)
+            print(translation*self.zTrans*rotation)
             self.zTransReady = True
         elif data.name == "target":
             self.state = TARGET
@@ -287,8 +289,12 @@ class Controller:
             return 0
 
 
+def myhook():
+    print('time to go...')
+    recsys.exit()
 
 def main():
+    rospy.init_node('SmartTemplate')
     rospy.loginfo('Welcome to the Smart Template controller\n')
 
     control = Controller()
@@ -305,7 +311,7 @@ def main():
 #        time.sleep(10)
 #        print('test.')
 #        sys.exit()
-
+#    rospy.on_shutdown(myhook)
     while 1:
 
         while control.state == IDLE:
@@ -356,5 +362,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        print('over...')
  
