@@ -27,15 +27,17 @@ class Target:
         self.ht_RAS_target_angle = ang
 
     def define_target_robot(self,zframe_matrix):
-        self.HT_RAS_zFrame = zframe_matrix #TODO: Name convention
+        rotation = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 0.0 1.0 0.0 ; 0.0 -1.0 0.0 0.0; 0.0 0.0 0.0 1.0')
+        translation = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 50.0 ; 0.0 0.0 1.0 -100.0; 0.0 0.0 0.0 1.0')
+        
+        self.ht_RAS_zFrame = zframe_matrix #TODO: Name convention
         self.get_insertion_angle()
         self.define_position_piezo()
-
-        inv_ht_RAS_zFrame = numpy.linalg.inv(self.ht_RAS_zframe*self.ht_zframe_base)
+        print(translation*self.ht_RAS_zframe*rotation)
+        inv_ht_RAS_zFrame = numpy.linalg.inv(translation*self.ht_RAS_zframe*rotation)
         self.ht_zframe_target = inv_ht_RAS_zFrame*self.ht_RAS_target
-
-
-
+        print('target location')
+        print(self.ht_zframe_target)
         #Compensate the bias due to the piezo motion and angulation:
 
         diff_horizontal = self.ht_zframe_target[2,3]*numpy.tan(self.phi)
