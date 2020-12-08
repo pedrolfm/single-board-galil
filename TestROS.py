@@ -77,6 +77,7 @@ class Controller:
             pos = numpy.array([data.transform.translation.x,data.transform.translation.y,data.transform.translation.z])
             quat = numpy.array([data.transform.rotation.w, data.transform.rotation.x,data.transform.rotation.y,data.transform.rotation.z])
             self.zTrans = self.quaternion2ht(quat,pos)
+            print(self.zTrans)
             self.zTransReady = True
         elif data.name == "target":
             self.state = TARGET
@@ -276,9 +277,9 @@ class Controller:
 
     def define_target(self):
         #Get target (x,y,z)
-        if self.target.HT_RAS_Target[0,3] != 0.0 and self.target.HT_RAS_Target[1,3] != 0.0 and self.target.HT_RAS_Target[2,3] != 0.0:
-            self.target.definePositionPiezo()
-            return self.target.defineTargetRobot(self.zTrans)
+        if self.target.ht_RAS_target[0,3] != 0.0 and self.target.ht_RAS_target[1,3] != 0.0 and self.target.ht_RAS_target[2,3] != 0.0:
+            self.target.define_position_piezo()
+            return self.target.define_target_robot(self.zTrans)
         else:
             rospy.loginfo( "Please check the target location")
             return 0
@@ -306,7 +307,7 @@ def main():
 
         while control.state == IDLE:
             rospy.loginfo("*** waiting ***")
-            time.sleep(100)
+            time.sleep(10)
             control.TransferData.name="teste"
             control.TransferData.data="IDLE MODE"
             control.pub.publish(control.TransferData)

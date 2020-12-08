@@ -30,9 +30,10 @@ class Target:
         rotation = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 0.0 1.0 0.0 ; 0.0 -1.0 0.0 0.0; 0.0 0.0 0.0 1.0')
         translation = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 50.0 ; 0.0 0.0 1.0 -100.0; 0.0 0.0 0.0 1.0')
         
-        self.ht_RAS_zFrame = zframe_matrix #TODO: Name convention
+        self.ht_RAS_zframe = zframe_matrix #TODO: Name convention
         self.get_insertion_angle()
         self.define_position_piezo()
+        print(self.ht_RAS_target)
         print(translation*self.ht_RAS_zframe*rotation)
         inv_ht_RAS_zFrame = numpy.linalg.inv(translation*self.ht_RAS_zframe*rotation)
         self.ht_zframe_target = inv_ht_RAS_zFrame*self.ht_RAS_target
