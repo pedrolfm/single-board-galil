@@ -29,7 +29,7 @@ class Controller:
         self.pub = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
         rospy.init_node('talker', anonymous=True)
         # Define the variables
-        self.TransferData = igtlstring
+        self.TransferData = igtlstring()
         self.CartesianPositionA = 0
         self.CartesianPositionB = 0
         self.OrientationA = 0
@@ -121,6 +121,7 @@ class Controller:
         try:
             self.ser = serial.Serial('/dev/ttyUSB0', baudrate=115200, timeout=1)  # open serial port
             #self.ser.open()
+            print('connection open')
             return 1
         except:
             rospy.loginfo("\n*** could not open the serial communication ***\n")
@@ -166,12 +167,12 @@ class Controller:
             self.ser.write(str("MT ?\r"))
             time.sleep(0.1)
             MT1 = float(self.ser.read(4))
-
+            
             self.ser.flushInput()
             self.ser.write(str("MT ,?\r"))
             time.sleep(0.1)
             MT2 = float(self.ser.read(4))
-
+            
             self.ser.flushInput()
             self.ser.write(str("CE ?\r"))
             time.sleep(0.1)
@@ -288,18 +289,27 @@ def main():
 
     control = Controller()
     time.sleep(3)
-    print("testing the BBB on My LT")
-    #control.open_connection()
+    print("testing the BBB send/receive")
+    control.open_connection()
     if control.check_controller()==0:
-        rospy.loginfo('Check Galil controller setup\nClosing the software')
+        rospy.loginfo('Check Galil controller setup\n')
+        control.TransferData.name = "teste"
         control.TransferData.data = "Wrong Galil Config"
         control.pub.publish(control.TransferData)
+
+#    while 1:
+#        time.sleep(10)
+#        print('test.')
+#        sys.exit()
 
     while 1:
 
         while control.state == IDLE:
-            #rospy.loginfo("*** waiting ***")
-            time.sleep(0.01)
+            rospy.loginfo("*** waiting ***")
+            time.sleep(100)
+            control.TransferData.name="teste"
+            control.TransferData.data="IDLE MODE"
+            control.pub.publish(control.TransferData)
 
         if control.state == INIT:
 
