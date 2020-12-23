@@ -17,9 +17,9 @@ MOVE = 3
 PIEZO_INIT_VERTICAL = 0
 PIEZO_INIT_HORIZONTAL = 0
 
-US_MM_2_COUNT = 500.0/2.5349
+US_MM_2_COUNT = 2000.0/2.5349
 
-PE_MM_2_COUNT = 5500.0/16.51
+PE_MM_2_COUNT = 500 #5500.0/16.51
 
 class Controller:
 
@@ -27,10 +27,14 @@ class Controller:
 
         rospy.Subscriber('IGTL_STRING_IN', igtlstring, self.callbackString)
         rospy.Subscriber('IGTL_TRANSFORM_IN', igtltransform, self.callbackTransformation)
-        self.pub = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
-#        rospy.init_node('talker', anonymous=True)
+        self.pub1 = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=1)
+        self.pub2 = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=1)
+        rospy.init_node('talker', anonymous=True)
         # Define the variables
-        self.TransferData = igtlstring()
+        self.TransferData1 = igtlstring()
+        self.TransferData1.name = "statusTarget"
+        self.TransferData2 = igtlstring()
+        self.TransferData2.name = "statusZ-Frame"
         self.CartesianPositionA = 0
         self.CartesianPositionB = 0
         self.OrientationA = 0
@@ -43,22 +47,28 @@ class Controller:
         self.zTransReady = False
         self.zTrans = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
         self.target = Target()
-
+        self.connectionStatus = False
+        self.save_position_A = 0 
+        self.save_position_B = 0
+        self.save_position_C = 0
+        self.save_position_D = 0
     def mm2counts_us_motor(self,distance):
         # 1 US motor rotation = 500 counts = 0.0998 inches =  2.53492 mm
-        return mm2count*distance
+        print(distance)
+        return int(US_MM_2_COUNT*distance)
 
     def counts2mm_us_motor(self,counts):
         # 1 US motor rotation = 500 counts = 0.0998 inches =  2.53492 mm
-        return (1.0/mm2count)*counts
+        print(distance)
+        return int((1.0/US_MM_2_COUNT)*counts)
 
     def mm2counts_piezomotor(self,distance):
         # Still need to define the best relationship
-        return Piezomm2count*distance
+        return int(PE_MM_2_COUNT*distance)
 
     def counts2mm_piezomotor(self,counts):
         # Still need to define the best relationship
-        return (1.0/Piezomm2count)*counts
+        return int((1.0/PE_MM_2_COUNT)*counts)
 
 ####################CALLBACKS
     def callbackString(self, data):
@@ -67,25 +77,28 @@ class Controller:
             self.state = INIT
         elif data.data == "MOVE":
             self.state = MOVE
+        elif data.data == "SERIAL":
+#            self.open_connection()
+            self.reconnect()
         else:
             self.state = IDLE
             rospy.loginfo('Invalid message, returning to IDLE state')
 
     def callbackTransformation(self, data):
-        rospy.loginfo(rospy.get_caller_id() + 'I heard')
-        if data.name == "zTrans":
+        rospy.loginfo(rospy.get_caller_id() + 'I heard ' + data.name)
+        if data.name == "zFrameTransformation":
             pos = numpy.array([data.transform.translation.x,data.transform.translation.y,data.transform.translation.z])
             quat = numpy.array([data.transform.rotation.w, data.transform.rotation.x,data.transform.rotation.y,data.transform.rotation.z])
             self.zTrans = self.quaternion2ht(quat,pos)
             print(self.zTrans)
             self.zTransReady = True
-        elif data.name == "target":
+        elif data.name == "targetTransformation":
             self.state = TARGET
             pos = numpy.array([data.transform.translation.x,data.transform.translation.y,data.transform.translation.z])
             quat = numpy.array([data.transform.rotation.w, data.transform.rotation.x,data.transform.rotation.y,data.transform.rotation.z])
             self.targetRAS = self.quaternion2ht(quat,pos)
             self.target.set_target_RAS(self.targetRAS)
-        elif data.name == "angle":
+        elif data.name == "angleTransformation":
             self.state = TARGET
             pos = numpy.array(
                 [data.transform.translation.x, data.transform.translation.y, data.transform.translation.z])
@@ -123,11 +136,52 @@ class Controller:
         try:
             self.ser = serial.Serial('/dev/ttyUSB0', baudrate=115200, timeout=1)  # open serial port
             #self.ser.open()
+            self.connectionStatus = True
             print('connection open')
             return 1
         except:
-            rospy.loginfo("\n*** could not open the serial communication ***\n")
-            return 0
+            try:
+               self.ser = serial.Serial('/dev/ttyUSB1', baudrate=115200, timeout=1)  # open serial port
+               #self.ser.open()
+               self.connectionStatus = True
+               print('connection open')
+               return 1
+            except:
+               self.connectionStatus = False
+               rospy.loginfo("\n*** could not open the serial communication ***\n")
+               return 0
+
+
+    def reconnect(self):
+        try:
+            self.ser = serial.Serial('/dev/ttyUSB0', baudrate=115200, timeout=1)  # open serial port
+            #self.ser.open()
+            self.connectionStatus = True
+            print('connection open')
+           # return 1
+        except:
+            try:
+               self.ser = serial.Serial('/dev/ttyUSB1', baudrate=115200, timeout=1)  # open serial port
+               #self.ser.open()
+               self.connectionStatus = True
+               print('connection open')
+              # return 1
+            except:
+               self.connectionStatus = False
+               rospy.loginfo("\n*** could not open the serial communication ***\n")
+               return 0
+        time.sleep(0.5)
+        self.ser.write(str("DPA=%d\r" % self.save_position_A))
+        print(str("DPA=%d\r" % self.save_position_A))
+        time.sleep(0.1)
+        self.ser.write(str("DPB=%d\r" % self.save_position_B))
+        time.sleep(0.1)
+        self.ser.write(str("DPC=%d\r" % self.save_position_C))
+        time.sleep(0.1)
+        self.ser.write(str("DPD=%d\r" % self.save_position_D))
+        time.sleep(0.1)
+        return 1
+
 
 
     def send_movement_in_counts(self,X,Channel):
@@ -208,6 +262,8 @@ class Controller:
     def SendAbsolutePosition(self,Channel,X):
         try:
             if self.AbsoluteMode:
+                self.ser.write(str("PT%s=1\r" % Channel))
+                time.sleep(0.01)
                 self.ser.write(str("PA%s=%d\r" % (Channel,X)))
                 return 1
             else:
@@ -220,13 +276,21 @@ class Controller:
 
     def init_us_motors(self):
         try:
-            self.ser.write(str("PR 1000,1000\r")) #Check the values depending on the hardware
-            #self.ser.write(str("BG \r"))
+            self.ser.write(str("CN -1\r"))
+            time.sleep(0.01)
+            self.ser.write(str("SHA\r"))
+            time.sleep(0.01)
+            self.ser.write(str("PRA=47000\r"))
+            time.sleep(0.01)
+            self.ser.write(str("BGA\r"))
+            time.sleep(0.01)
+            self.ser.write(str("WT100\r"))
+            time.sleep(0.01)
+
             time.sleep(1)
             LRA = 1.0
             LRB = 1.0
-
-            while LRA==1.0 or LRB==1.0:
+            while LRA==1.0:
                 # Motor A
                 self.ser.flushInput()
                 time.sleep(0.01)
@@ -234,6 +298,26 @@ class Controller:
                 time.sleep(0.01)
                 LRAstring = self.ser.read(4)
                 LRA = float(LRAstring)
+            time.sleep(0.01)
+            self.ser.write(str("SHA\r"))
+            time.sleep(0.01)
+            self.ser.write(str("PRA = -23500"))
+            time.sleep(0.01)
+            self.ser.write(str("BGA\r"))
+            #Motor B 
+            self.ser.write(str("CN -1\r"))
+            time.sleep(0.01)
+            self.ser.write(str("SHB\r"))
+            time.sleep(0.01)
+            self.ser.write(str("PRB=40000\r"))
+            time.sleep(0.01)
+            self.ser.write(str("BGB\r"))
+            time.sleep(0.01)
+            self.ser.write(str("WT100\r"))
+            time.sleep(1)
+            LRA = 1.0
+            LRB = 1.0
+            while LRB==1.0:
                 # Motor B
                 self.ser.flushInput()
                 time.sleep(0.01)
@@ -241,7 +325,12 @@ class Controller:
                 time.sleep(0.01)
                 LRBstring = self.ser.read(4)
                 LRB = float(LRBstring)
-
+            time.sleep(0.01)
+            self.ser.write(str("SHB\r"))
+            time.sleep(0.01)
+            self.ser.write(str("PRB = -20000"))
+            time.sleep(0.01)
+            self.ser.write(str("BGB\r")) 
             rospy.loginfo("*** initialization done***")
             return 1
         except:
@@ -290,31 +379,38 @@ def myhook():
     recsys.exit()
 
 def main():
-    rospy.init_node('SmartTemplate')
+#    rospy.init_node('SmartTemplate')
     rospy.loginfo('Welcome to the Smart Template controller\n')
 
     control = Controller()
     time.sleep(3)
-    print("testing the BBB send/receive")
+    control.state = IDLE
     control.open_connection()
+    control.SetAbsoluteMotion('A')
+    control.SetAbsoluteMotion('B')
+    control.SetAbsoluteMotion('C')
+    control.SetAbsoluteMotion('D')
+
+
     if control.check_controller()==0:
         rospy.loginfo('Check Galil controller setup\n')
-        control.TransferData.name = "teste"
-        control.TransferData.data = "Wrong Galil Config"
-        control.pub.publish(control.TransferData)
 
-    while not rospy.is_shutdown():
+    while 1: #not rospy.is_shutdown():
 
         while control.state == IDLE:
-            rospy.loginfo("*** waiting ***")
+            rospy.loginfo("*** waiting 2 ***")
+            
+            strg_temp = "(%02f, %02f, %02f)mm - (%02f, %02f)rad" % (control.target.ht_RAS_target[0,3],control.target.ht_RAS_target[1,3],control.target.ht_RAS_target[2,3],control.target.phi,control.target.teta)
+            control.TransferData1.data = strg_temp
+            control.pub1.publish(control.TransferData1)
             time.sleep(10)
-            control.TransferData.name="teste"
-            control.TransferData.data="IDLE MODE"
-            control.pub.publish(control.TransferData)
+#           strg_temp = "No Connection"+control.zTransReady+"-"
+            control.TransferData2.data = "zFrame" + str(control.zTransReady)
+            control.pub2.publish(control.TransferData2)
 
         if control.state == INIT:
 
-            if control.init_us_motors() and control.init_piezo():
+            if control.init_us_motors(): # and control.init_piezo():
                 control.SetAbsoluteMotion('A')
                 control.SetAbsoluteMotion('B')
                 control.SetAbsoluteMotion('C')
@@ -328,26 +424,34 @@ def main():
         if control.state == TARGET and control.zTransReady:
             if control.define_target():
                 rospy.loginfo("Target set, waiting for command")
-                rospy.loginfo("Movement axis A: %f counts" % (control.mm2counts_us_motor(control.target.x)))
-                rospy.loginfo("Movement axis B: %f counts" % (control.mm2counts_us_motor(control.target.y)))
-                rospy.loginfo("Movement axis C: %f counts" % (control.mm2counts_piezomotor(control.target.piezo[0])))
-                rospy.loginfo("Movement axis D: %f counts" % (control.mm2counts_piezomotor(control.target.piezo[1])))
+                rospy.loginfo("Movement axis A: %f mm -  %f counts" % (-control.target.y,-control.mm2counts_us_motor(control.target.y)))
+                rospy.loginfo("Movement axis B: %f mm -  %f counts" % (-control.target.x,-control.mm2counts_us_motor(control.target.x)))
+                rospy.loginfo("Movement axis C: %f mm -  %f counts" % (control.target.piezo[1],control.mm2counts_piezomotor(control.target.piezo[1])))
+                rospy.loginfo("Movement axis D: %f mm -  %f counts" % (control.target.piezo[0],control.mm2counts_piezomotor(control.target.piezo[0])))
                 control.state = IDLE
+                control.target.ready = True
+                print(control.target.ready)
+                print("out of the loop")
             else:
                 rospy.loginfo("Check target location and try again")
                 control.state = IDLE
 
         if control.state == MOVE and control.target.ready == True:
-
-            control.SendAbsolutePosition('A',control.mm2counts_us_motor(control.target.x))
+            print("target ready, start movement...")
+            control.SendAbsolutePosition('A', -control.mm2counts_us_motor(control.target.y))
             time.sleep(0.01)
-            control.SendAbsolutePosition('B',control.mm2counts_us_motor(control.target.y))
+            control.SendAbsolutePosition('B', -control.mm2counts_us_motor(control.target.x))
             time.sleep(0.01)
-            control.SendAbsolutePosition('C', control.mm2counts_piezomotor(control.target.piezo[0]))
+            control.SendAbsolutePosition('C', control.mm2counts_piezomotor(control.target.piezo[1]))
             time.sleep(0.01)
-            control.SendAbsolutePosition('D', control.mm2counts_piezomotor(control.target.piezo[1]))
+            control.SendAbsolutePosition('D', control.mm2counts_piezomotor(control.target.piezo[0]))
             time.sleep(0.01)
-
+            control.save_position_A = -control.mm2counts_us_motor(control.target.y)
+            control.save_position_B = -control.mm2counts_us_motor(control.target.x)
+            control.save_position_C = control.mm2counts_piezomotor(control.target.piezo[1])
+            control.save_position_D = control.mm2counts_piezomotor(control.target.piezo[0])
+            control.target.ready = False
+            control.state = IDLE
             rospy.loginfo("Sent inputs to Galil: A=%f, B=%f, C=%f, D=%f counts" % (control.mm2counts_us_motor(control.target.x),control.mm2counts_us_motor(control.target.y),control.mm2counts_piezomotor(control.target.piezo[0]),control.mm2counts_piezomotor(control.target.piezo[1])))
 
 
