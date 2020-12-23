@@ -13,7 +13,8 @@ class Target:
         self.x = 0.0
         self.y = 0.0
         self.z = 0.0
-
+        self.phi = 0.0
+        self.teta = 0.0
         self.ready = False
 
 
@@ -28,7 +29,7 @@ class Target:
 
     def define_target_robot(self,zframe_matrix):
         rotation = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 0.0 1.0 0.0 ; 0.0 -1.0 0.0 0.0; 0.0 0.0 0.0 1.0')
-        translation = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 50.0 ; 0.0 0.0 1.0 -100.0; 0.0 0.0 0.0 1.0')
+        translation = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 107.0 ; 0.0 0.0 1.0 -114; 0.0 0.0 0.0 1.0')
         
         self.ht_RAS_zframe = zframe_matrix #TODO: Name convention
         self.get_insertion_angle()
@@ -41,12 +42,14 @@ class Target:
         print(self.ht_zframe_target)
         #Compensate the bias due to the piezo motion and angulation:
 
-        diff_horizontal = self.ht_zframe_target[2,3]*numpy.tan(self.phi)
-        diff_vertical = self.ht_zframe_target[2, 3] * numpy.tan(self.teta)
-        print("Difference: %f, %f." % (diff_horizontal, diff_vertical))
 
-        self.x = self.ht_zframe_target[0,3] + self.piezo[1] + diff_horizontal
-        self.y = self.ht_zframe_target[1,3] + self.piezo[0] + diff_vertical
+        diff_horizontal = self.ht_zframe_target[2,3]*numpy.tan(self.teta)
+        diff_vertical = self.ht_zframe_target[2, 3] * numpy.tan(self.phi)
+        print("Difference: %f, %f." % (diff_horizontal, diff_vertical))
+        print(self.piezo)
+
+        self.x = self.ht_zframe_target[0,3] + self.piezo[0] + diff_horizontal
+        self.y = self.ht_zframe_target[1,3] + diff_vertical
         self.z = self.ht_zframe_target[2,3]
 
         return 1
@@ -58,6 +61,10 @@ class Target:
         self.teta = numpy.arctan2(-self.ht_RAS_target_angle[2,0],numpy.sqrt(self.ht_RAS_target_angle[0,0]*self.ht_RAS_target_angle[0,0]+self.ht_RAS_target_angle[1,0]*self.ht_RAS_target_angle[1,0]))
         self.gamma = numpy.arctan2(self.ht_RAS_target_angle[1,0]/numpy.cos(self.teta),self.ht_RAS_target_angle[0,0]/numpy.cos(self.teta))
         self.phi = numpy.arctan2(self.ht_RAS_target_angle[2,1]/numpy.cos(self.teta),self.ht_RAS_target_angle[2,2]/numpy.cos(self.teta))
+
+        #something is wrong
+#        self.teta = -self.teta
+#        self.phi = -self.phi
 
         return
 
