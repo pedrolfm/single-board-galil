@@ -16,6 +16,7 @@ class Target:
         self.phi = 0.0
         self.teta = 0.0
         self.ready = False
+        self.piezo = numpy.array([0.0 , 0.0])
 
 
     def get_target_RAS(self):
