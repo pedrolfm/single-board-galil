@@ -29,10 +29,7 @@ class Controller:
         rospy.Subscriber('IGTL_TRANSFORM_IN', igtltransform, self.callbackTransformation)
         self.pub1 = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
         self.pub2 = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
-        self.US1 = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
-        self.US2 = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
-        self.PE1 = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
-        self.PE2 = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
+        self.motors = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
 
         rospy.init_node('talker', anonymous=True)
         # Define the variables
@@ -40,15 +37,8 @@ class Controller:
         self.TransferData1.name = "statusTarget"
         self.TransferData2 = igtlstring()
         self.TransferData2.name = "statusZ-Frame"
-        self.US1Data = igtlstring()
-        self.US1Data.name = "US1"
-        self.US2Data = igtlstring()
-        self.US2Data.name = "US2"
-        self.PE1Data = igtlstring()
-        self.PE1Data.name = "PE1"
-        self.PE2Data = igtlstring()
-        self.PE2Data.name = "PE2"
-
+        self.motorsData = igtlstring()
+        self.motorsData.name = "motorPosition"
 
         self.CartesianPositionA = 0
         self.CartesianPositionB = 0
@@ -426,15 +416,9 @@ def main():
             control.pub2.publish(control.TransferData2)
 
             #Load information
-            control.US1Data.data = str(control.target.y)
-            control.US2Data.data = str(control.target.x)
-            control.PE1Data.data = str(control.target.piezo[1])
-            control.PE2Data.data = str(control.target.piezo[0])
+            control.motorsData.data = str(control.target.y) + "#" + str(control.target.x) + "#" + str(control.target.piezo[1]) + "#" + str(control.target.piezo[0])
+            control.motors.publish(control.motorsData)
 
-            control.US1.publish(control.US1Data)
-            control.US2.publish(control.US2Data)
-            control.PE1.publish(control.PE1Data)
-            control.PE2.publish(control.PE2Data)
 
         if control.state == INIT:
 
