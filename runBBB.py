@@ -113,6 +113,8 @@ class Controller:
             quat = numpy.array([data.transform.rotation.w, data.transform.rotation.x,data.transform.rotation.y,data.transform.rotation.z])
             self.targetRAS = self.quaternion2ht(quat,pos)
             self.target.set_target_RAS(self.targetRAS)
+            self.targetRAS_angle = self.quaternion2ht(quat, pos)
+            self.target.set_target_RAS_angle(self.targetRAS_angle)
         elif data.name == "angleTransformation":
             self.state = TARGET
             pos = numpy.array(
