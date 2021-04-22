@@ -30,6 +30,7 @@ class Controller:
         self.pub1 = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
         self.pub2 = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
         self.motors = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
+        self.galilStatus = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
 
         rospy.init_node('talker', anonymous=True)
         # Define the variables
@@ -39,6 +40,11 @@ class Controller:
         self.TransferData2.name = "statusZ-Frame"
         self.motorsData = igtlstring()
         self.motorsData.name = "motorPosition"
+        self.galilStatusData = igtlstring()
+        self.galilStatusData.name = "status"
+
+
+        self.status = 0
 
         self.CartesianPositionA = 0
         self.CartesianPositionB = 0
@@ -188,19 +194,42 @@ class Controller:
         self.ser.write(str("DPD=%d\r" % self.save_position_D))
         time.sleep(0.1)
         return 1
-
-
-     def getMotorPosition(self):
+    
+    def getFTSWstatus(self):
+        self.ser.flushInput()
+        time.sleep(0.05)
         try:
-            self.ser.write(str("PR ?,?,?,?;")
+            self.ser.write(str("MG @IN[1];"))
             time.sleep(0.1)
         except:
             print("*** could not send command ***")
-            return 0
+            self.status = 0
+            self.galilStatusData.data = "No Galil connection"
+            return
+        bytesToRead = self.ser.inWaiting()
+        data_temp = self.ser.read(bytesToRead-3)
+        if (float(data_temp) == 1):
+            self.status = 1
+            self.galilStatusData.data = "FTSW OFF"
+        elif (float(data_temp) == 0):
+            self.status = 2
+            self.galilStatusData.data = "FTSW ON"
+        else:
+            self.status = 3
+            self.galilStatusData.data = "Check conection"
+        print(float(data_temp))
+        return 
+
+    def getMotorPosition(self):
         self.ser.flushInput()
         time.sleep(0.05)
-        self.ser.write(str("PR%s=?\r" % Channel))
-        time.sleep(0.1)
+        try:
+            self.ser.write(str("TP;"))
+            time.sleep(0.1)
+        except:
+            print("*** could not send command ***")
+            self.status = 0
+            return 0
         bytesToRead = self.ser.inWaiting()
         data_temp = self.ser.read(bytesToRead-3)
         return data_temp
@@ -434,7 +463,8 @@ def main():
             strg_temp = control.getMotorPosition()
             control.motorsData.data = strg_temp#str(control.target.y) + "#" + str(control.target.x) + "#" + str(control.target.piezo[1]) + "#" + str(control.target.piezo[0])
             control.motors.publish(control.motorsData)
-
+            control.getFTSWstatus()
+            control.galilStatus.publish(control.galilStatusData)
 
         if control.state == INIT:
 
