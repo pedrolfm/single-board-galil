@@ -327,37 +327,54 @@ class Controller:
 
     def init_us_motors(self):
         try:
-            LRA = 0.0
-            LRB = 0.0
-            self.ser.write(str("CN -1;"))
+            LFA = 1.0
+            LFB = 1.0
+            self.ser.write("CN -1\n")
             time.sleep(0.01)
-            self.ser.write(str("SHAB;"))
+            self.ser.write("SHB\n")
             time.sleep(0.01)
-            self.ser.write(str("AC = 16000;"))
+            self.ser.write("SHA\n") 
             time.sleep(0.01)
-            self.ser.write(str("SP = 5000;"))
+            self.ser.write("AC = 16000\n")
             time.sleep(0.01)
-            self.ser.write(str("PRA = 25000;"))
+            self.ser.write("SP = 5000;")
             time.sleep(0.01)
-            self.ser.write(str("PRB = 25000;"))
+            self.ser.write("PRA = 25000;")
             time.sleep(0.01)
-            self.ser.write(str("BGAB;"))
-            
-            while LRA == 0 and LRB ==0:
+            self.ser.write("PRB = 25000;")
+            time.sleep(0.01)
+            self.ser.write("BGA;")
+            time.sleep(0.01)
+            self.ser.write("BGB;")
+            time.sleep(0.1)
+            print("start init.")
+            while LFA == 1.0 or LFB == 1.0:
+                print("start loop")
+                time.sleep(0.01)
                 self.ser.flushInput()
-                self.ser.write(str("MG _LRA;"))
-                bytesToRead = self.ser.inWaiting()
-                LRA = float(self.ser.read(bytesToRead-3))
+                self.ser.write("MG _LFA\n")
+                time.sleep(0.1)
+                print(self.ser.read(6))
+                if LFA == 0:
+                    self.ser.write(str("MO A;"))
+                time.sleep(0.01)
                 self.ser.flushInput()
-                self.ser.write(str("MG _LRB;"))
+                self.ser.write(str("MG _LFB;"))
                 bytesToRead = self.ser.inWaiting()
-                LRB = float(self.ser.read(bytesToRead-3)) 
+                #LFB = float(self.ser.read(bytesToRead-3))
+                if LFB == 0:
+                    self.ser.write(str("MO B;"))
             time.sleep(0.01)
             self.ser.write(str("PRA = -11500;"))
             time.sleep(0.01)
             self.ser.write(str("PRB = -11500;"))
             time.sleep(0.01)
-            self.ser.write(str("BGAB;"))
+            self.ser.flushInput()
+            self.ser.write("TC1;")
+            time.sleep(0.1)
+            print(self.ser.read(4))
+
+            #self.ser.write(str("BGAB;"))
             print("DONE INIT...")    
         except:
             print("NO INIT...")    
