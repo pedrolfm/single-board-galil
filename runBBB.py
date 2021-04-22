@@ -190,6 +190,21 @@ class Controller:
         return 1
 
 
+     def getMotorPosition(self):
+        try:
+            self.ser.write(str("PR ?,?,?,?;")
+            time.sleep(0.1)
+        except:
+            print("*** could not send command ***")
+            return 0
+        self.ser.flushInput()
+        time.sleep(0.05)
+        self.ser.write(str("PR%s=?\r" % Channel))
+        time.sleep(0.1)
+        bytesToRead = self.ser.inWaiting()
+        data_temp = self.ser.read(bytesToRead-3)
+        return data_temp
+    
 
     def send_movement_in_counts(self,X,Channel):
         try:
@@ -407,7 +422,7 @@ def main():
         while control.state == IDLE:
             rospy.loginfo("*** waiting 2 ***")
             
-            strg_temp = "(%02f, %02f, %02f)mm - (%02f, %02f)rad" % (control.target.ht_RAS_target[0,3],control.target.ht_RAS_target[1,3],control.target.ht_RAS_target[2,3],control.target.phi,control.target.teta)
+            strg_temp = "(%02f, %02f, %02f)mm - (%02f, %02f)rad" % (control.target.ht_RAS_target[0,3],control.target.ht_RAS_target[1,3],control.target.ht_RAS_target[2,3],control.target.phi,control.target.teta)            
             control.TransferData1.data = strg_temp
             control.pub1.publish(control.TransferData1)
             time.sleep(10)
@@ -416,7 +431,8 @@ def main():
             control.pub2.publish(control.TransferData2)
 
             #Load information
-            control.motorsData.data = str(control.target.y) + "#" + str(control.target.x) + "#" + str(control.target.piezo[1]) + "#" + str(control.target.piezo[0])
+            strg_temp = control.getMotorPosition()
+            control.motorsData.data = strg_temp#str(control.target.y) + "#" + str(control.target.x) + "#" + str(control.target.piezo[1]) + "#" + str(control.target.piezo[0])
             control.motors.publish(control.motorsData)
 
 
