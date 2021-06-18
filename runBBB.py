@@ -329,16 +329,10 @@ class Controller:
         try:
             LFA = 1.0
             LFB = 1.0
-            self.ser.write("CN -1\n")
+            self.ser.write("OE 2,2,0,0;")
             time.sleep(0.01)
-            self.ser.write("SHB\n")
-            time.sleep(0.01)
-            self.ser.write("SHA\n") 
-            time.sleep(0.01)
-            self.ser.write("AC = 16000\n")
-            time.sleep(0.01)
-            self.ser.write("SP = 5000;")
-            time.sleep(0.01)
+            self.ser.write("SH;")
+            time.sleep(0.5)
             self.ser.write("PRA = 25000;")
             time.sleep(0.01)
             self.ser.write("PRB = 25000;")
@@ -347,35 +341,25 @@ class Controller:
             time.sleep(0.01)
             self.ser.write("BGB;")
             time.sleep(0.1)
-            print("start init.")
-            while LFA == 1.0 or LFB == 1.0:
-                print("start loop")
-                time.sleep(0.01)
-                self.ser.flushInput()
-                self.ser.write("MG _LFA\n")
-                time.sleep(0.1)
-                print(self.ser.read(6))
-                if LFA == 0:
-                    self.ser.write(str("MO A;"))
-                time.sleep(0.01)
-                self.ser.flushInput()
-                self.ser.write(str("MG _LFB;"))
-                bytesToRead = self.ser.inWaiting()
-                #LFB = float(self.ser.read(bytesToRead-3))
-                if LFB == 0:
-                    self.ser.write(str("MO B;"))
+            bytesToRead = self.ser.inWaiting()
+            data_temp = self.ser.read(bytesToRead)
+
+            time.sleep(60.0)
+
+            self.ser.write(str("OE 0,0,0,0;"))
+            time.sleep(0.01)
+            self.ser.write(str("SH;"))
+
             time.sleep(0.01)
             self.ser.write(str("PRA = -11500;"))
             time.sleep(0.01)
             self.ser.write(str("PRB = -11500;"))
             time.sleep(0.01)
             self.ser.flushInput()
-            self.ser.write("TC1;")
-            time.sleep(0.1)
-            print(self.ser.read(4))
-
-            #self.ser.write(str("BGAB;"))
+            self.ser.write(str("BGAB;"))
             print("DONE INIT...")    
+            self.ser.write(str("OE 2,2,0,0;"))
+            time.sleep(0.01)
         except:
             print("NO INIT...")    
         return
