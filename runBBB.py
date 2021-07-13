@@ -83,9 +83,11 @@ class Controller:
 
 ####################CALLBACKS
     def callbackString(self, data):
-        rospy.loginfo(rospy.get_caller_id() + 'I heard %s', data.data)
-        if data.data == "INIT":
+        rospy.loginfo(rospy.get_caller_id() + 'I heard %s', data.name)
+        if data.name == "INIT":
             self.state = INIT
+            self.initCondition = data.data[4]+data.data[5]
+            print(self.initCondition)
         elif data.data == "MOVE":
             self.state = MOVE
         elif data.data == "SERIAL":
