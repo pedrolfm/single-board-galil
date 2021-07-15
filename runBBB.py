@@ -16,6 +16,7 @@ TARGET = 2
 MOVE = 3
 PIEZO_INIT_VERTICAL = 0
 PIEZO_INIT_HORIZONTAL = 0
+SHARP = chr(35)
 
 US_MM_2_COUNT = 2000.0/2.5349
 
@@ -306,6 +307,7 @@ class Controller:
         try:
             self.ser.write(str("DP%s=0\r" % Channel))
             self.ser.write(str("PT%s=1\r" % Channel))
+            self.ser.write(str("SH;"))
             self.AbsoluteMode = True
             return 1
         except:
@@ -315,9 +317,9 @@ class Controller:
     def SendAbsolutePosition(self,Channel,X):
         try:
             if self.AbsoluteMode:
-                self.ser.write(str("PT%s=1\r" % Channel))
+                self.ser.write(str("PT%s=1;" % Channel))
                 time.sleep(0.01)
-                self.ser.write(str("PA%s=%d\r" % (Channel,X)))
+                self.ser.write(str("PA%s=%d;" % (Channel,X)))
                 return 1
             else:
                 print("*** PA not available ***")
@@ -327,65 +329,57 @@ class Controller:
             print("*** could not send command ***")
             return 0
 
+
+    def init_motors(self):
+        try:
+            if self.initCondition == "US":
+                self.init_us_motors()
+            # First horizontal, second vertical
+            elif self.initCondition == "LT":
+                self.init_piezo("HPELF","HPEUP")
+            elif self.initCondition == "LC":
+                self.init_piezo("HPELF","HPEVC")
+            elif self.initCondition == "LB":
+                self.init_piezo("HPELF","HPEDW")
+            elif self.initCondition == "RT":
+                self.init_piezo("HPERT","HPEUP")
+            elif self.initCondition == "RC":
+                self.init_piezo("HPERT","HPEVC")
+            elif self.initCondition == "RB":
+                self.init_piezo("HPERT","HPEDW")
+            elif self.initCondition == "CT":
+                self.init_piezo("HPEHC","HPEUP")
+            elif self.initCondition == "CC":
+                self.init_piezo("HPEHC","HPEVC")
+            elif self.initCondition == "CB":
+                self.init_piezo("HPEHC","HPEDW")
+            return 1
+        except:
+            rospy.loginfo("*** could not initialize motors ***")
+            return 0
+
+
     def init_us_motors(self):
         try:
-            LFA = 1.0
-            LFB = 1.0
-            self.ser.write("OE 2,2,0,0;")
-            time.sleep(0.01)
-            self.ser.write("SH;")
-            time.sleep(0.5)
-            self.ser.write("PRA = 25000;")
-            time.sleep(0.01)
-            self.ser.write("PRB = 25000;")
-            time.sleep(0.01)
-            self.ser.write("BGA;")
-            time.sleep(0.01)
-            self.ser.write("BGB;")
-            time.sleep(0.1)
-            bytesToRead = self.ser.inWaiting()
-            data_temp = self.ser.read(bytesToRead)
-
-            time.sleep(60.0)
-
-            self.ser.write(str("OE 0,0,0,0;"))
-            time.sleep(0.01)
-            self.ser.write(str("SH;"))
-
-            time.sleep(0.01)
-            self.ser.write(str("PRA = -11500;"))
-            time.sleep(0.01)
-            self.ser.write(str("PRB = -11500;"))
-            time.sleep(0.01)
-            self.ser.flushInput()
-            self.ser.write(str("BGAB;"))
-            print("DONE INIT...")    
-            self.ser.write(str("OE 2,2,0,0;"))
-            time.sleep(0.01)
+            print("XQ "+SHARP+"HUSA\n")
+            self.ser.write("XQ "+SHARP+"HUSA;")
+            time.sleep(40.0)
+            print("XQ "+SHARP+"HUSB\n")
+            self.ser.write("XQ "+SHARP+"HUSB;")
+            time.sleep(40.0)
+            print("DONE INIT...")
         except:
-            print("NO INIT...")    
+            print("NO INIT...")
         return
     
-    
-    def init_piezo(self):
+    def init_piezo(self,positionHorizontal,positionVertical):
         try:
-
-            self.ser.write(str("JG  500 500 500 500\r")) #Set the speed and direction for the first phase of the FI move
-            time.sleep(0.01)
-            self.ser.write(str("HV  300 300 300 300\r"))
-            time.sleep(0.01)
-            self.ser.write(str("FI CD\r"))
-            time.sleep(0.01)
-            self.ser.write(str("BG C\r"))
-            time.sleep(10.0)
-            self.ser.write(str("BG D\r"))
-            time.sleep(10.0)
-
-
-            self.ser.write(str("PRC=%d\r" % (PIEZO_INIT_VERTICAL)))
-            time.sleep(5.0)
-            self.ser.write(str("PRD=%d\r" % (PIEZO_INIT_HORIZONTAL)))
-            time.sleep(5.0)
+            print(str("XQ "+SHARP+positionVertical+",0;"))
+            self.ser.write(str("XQ "+SHARP+positionVertical+",0;")) 
+            time.sleep(60.0)
+            print(str("XQ "+SHARP+positionHorizontal+",1;"))  
+            self.ser.write(str("XQ "+SHARP+positionHorizontal+",1;"))
+            time.sleep(30.0)
             rospy.loginfo("*** initialization done***")
             return 1
         except:
@@ -429,7 +423,6 @@ def main():
 
         while control.state == IDLE:
             rospy.loginfo("*** waiting 2 ***")
-            
             strg_temp = "(%02f, %02f, %02f)mm - (%02f, %02f)rad" % (control.target.ht_RAS_target[0,3],control.target.ht_RAS_target[1,3],control.target.ht_RAS_target[2,3],control.target.phi,control.target.teta)            
             control.TransferData1.data = strg_temp
             control.pub1.publish(control.TransferData1)
@@ -447,7 +440,7 @@ def main():
 
         if control.state == INIT:
 
-            if control.init_us_motors(): # and control.init_piezo():
+            if control.init_motors():
                 control.SetAbsoluteMotion('A')
                 control.SetAbsoluteMotion('B')
                 control.SetAbsoluteMotion('C')
