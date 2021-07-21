@@ -363,10 +363,9 @@ class Controller:
         try:
             print("XQ "+SHARP+"HUSA\n")
             self.ser.write("XQ "+SHARP+"HUSA;")
-            time.sleep(40.0)
+            time.sleep(20.0)
             print("XQ "+SHARP+"HUSB\n")
             self.ser.write("XQ "+SHARP+"HUSB;")
-            time.sleep(40.0)
             print("DONE INIT...")
         except:
             print("NO INIT...")
@@ -454,10 +453,10 @@ def main():
         if control.state == TARGET and control.zTransReady:
             if control.define_target():
                 rospy.loginfo("Target set, waiting for command")
-                rospy.loginfo("Movement axis A: %f mm -  %f counts" % (-control.target.y,-control.mm2counts_us_motor(control.target.y)))
-                rospy.loginfo("Movement axis B: %f mm -  %f counts" % (-control.target.x,-control.mm2counts_us_motor(control.target.x)))
-                rospy.loginfo("Movement axis C: %f mm -  %f counts" % (control.target.piezo[1],control.mm2counts_piezomotor(control.target.piezo[1])))
-                rospy.loginfo("Movement axis D: %f mm -  %f counts" % (control.target.piezo[0],control.mm2counts_piezomotor(control.target.piezo[0])))
+                rospy.loginfo("Movement axis A: %f mm -  %f counts" % (control.target.x,control.mm2counts_us_motor(control.target.x)))
+                rospy.loginfo("Movement axis B: %f mm -  %f counts" % (control.target.y,control.mm2counts_us_motor(control.target.y)))
+                rospy.loginfo("Movement axis C: %f mm -  %f counts" % (-control.target.piezo[0],control.mm2counts_piezomotor(-control.target.piezo[0])))
+                rospy.loginfo("Movement axis D: %f mm -  %f counts" % (control.target.piezo[1],control.mm2counts_piezomotor(control.target.piezo[1])))
                 control.state = IDLE
                 control.target.ready = True
                 print(control.target.ready)
@@ -468,18 +467,18 @@ def main():
 
         if control.state == MOVE and control.target.ready == True:
             print("target ready, start movement...")
-            control.SendAbsolutePosition('A', -control.mm2counts_us_motor(control.target.y))
+            control.SendAbsolutePosition('A', control.mm2counts_us_motor(control.target.x))
             time.sleep(0.01)
-            control.SendAbsolutePosition('B', -control.mm2counts_us_motor(control.target.x))
+            control.SendAbsolutePosition('B', control.mm2counts_us_motor(control.target.y))
             time.sleep(0.01)
-            control.SendAbsolutePosition('C', control.mm2counts_piezomotor(control.target.piezo[1]))
+            control.SendAbsolutePosition('C', control.mm2counts_piezomotor(-control.target.piezo[0]))
             time.sleep(0.01)
-            control.SendAbsolutePosition('D', control.mm2counts_piezomotor(control.target.piezo[0]))
+            control.SendAbsolutePosition('D', control.mm2counts_piezomotor(control.target.piezo[1]))
             time.sleep(0.01)
-            control.save_position_A = -control.mm2counts_us_motor(control.target.y)
-            control.save_position_B = -control.mm2counts_us_motor(control.target.x)
-            control.save_position_C = control.mm2counts_piezomotor(control.target.piezo[1])
-            control.save_position_D = control.mm2counts_piezomotor(control.target.piezo[0])
+            control.save_position_A = control.mm2counts_us_motor(control.target.x)
+            control.save_position_B = control.mm2counts_us_motor(control.target.y)
+            control.save_position_C = control.mm2counts_piezomotor(-control.target.piezo[0])
+            control.save_position_D = control.mm2counts_piezomotor(control.target.piezo[1])
             control.target.ready = False
             control.state = IDLE
             rospy.loginfo("Sent inputs to Galil: A=%f, B=%f, C=%f, D=%f counts" % (control.mm2counts_us_motor(control.target.x),control.mm2counts_us_motor(control.target.y),control.mm2counts_piezomotor(control.target.piezo[0]),control.mm2counts_piezomotor(control.target.piezo[1])))
