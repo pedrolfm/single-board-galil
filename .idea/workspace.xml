@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="2054fa4c-fef6-4bb1-8b9d-d3331c2b23c7" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/GalilSerial.py" beforeDir="false" afterPath="$PROJECT_DIR$/GalilSerial.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/runBBB.py" beforeDir="false" afterPath="$PROJECT_DIR$/runBBB.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -61,9 +61,47 @@
         </counts>
       </usages-collector>
     </session>
+    <session id="-468931055">
+      <usages-collector id="statistics.lifecycle.project">
+        <counts>
+          <entry key="project.open.time.0" value="1" />
+          <entry key="project.opened" value="1" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.open">
+        <counts>
+          <entry key="py" value="1" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.open">
+        <counts>
+          <entry key="Python" value="1" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.edit">
+        <counts>
+          <entry key="py" value="1" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.edit">
+        <counts>
+          <entry key="Python" value="1" />
+        </counts>
+      </usages-collector>
+    </session>
   </component>
   <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300" />
+    <leaf>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/runBBB.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-1682">
+              <caret line="313" column="56" lean-forward="true" selection-start-line="313" selection-start-column="56" selection-end-line="313" selection-end-column="56" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -81,6 +119,7 @@
         <option value="$PROJECT_DIR$/Test3DSlicer.py" />
         <option value="$PROJECT_DIR$/GalilSerial.py" />
         <option value="$PROJECT_DIR$/utils.py" />
+        <option value="$PROJECT_DIR$/runBBB.py" />
       </list>
     </option>
   </component>
@@ -101,18 +140,18 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
             <path>
-              <item name="BBB_Galil_Controller" type="b2602c69:ProjectViewProjectNode" />
-              <item name="BBB_Galil_Controller" type="462c0819:PsiDirectoryNode" />
+              <item name="single-board-galil" type="b2602c69:ProjectViewProjectNode" />
+              <item name="single-board-galil" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -148,8 +187,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="1533" y="66" width="1827" height="921" extended-state="0" />
+    <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.20112045" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.20336135" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -179,13 +219,7 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/Test3DSlicer.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="6" selection-start-line="6" selection-end-line="6" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/Test3DSlicer.py" />
     <entry file="file://$PROJECT_DIR$/utils.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
@@ -193,26 +227,11 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/GalilSerial.py">
+    <entry file="file://$PROJECT_DIR$/GalilSerial.py" />
+    <entry file="file://$PROJECT_DIR$/runBBB.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="710">
-          <caret line="338" column="154" selection-start-line="338" selection-start-column="154" selection-end-line="338" selection-end-column="154" />
-          <folding>
-            <element signature="e#23#35#0" expanded="true" />
-            <element signature="e#408#1458#0" />
-            <element signature="e#1655#1756#0" />
-            <element signature="e#1944#2030#0" />
-            <element signature="e#2106#2408#0" />
-            <element signature="e#4061#4760#0" />
-            <element signature="e#4801#5074#0" />
-            <element signature="e#5131#5682#0" />
-            <element signature="e#5718#5930#0" />
-            <element signature="e#5982#6959#0" />
-            <element signature="e#7010#7274#0" />
-            <element signature="e#7330#7639#0" />
-            <element signature="e#7678#8635#0" />
-            <element signature="e#8671#9501#0" />
-          </folding>
+        <state relative-caret-position="-1682">
+          <caret line="313" column="56" lean-forward="true" selection-start-line="313" selection-start-column="56" selection-end-line="313" selection-end-column="56" />
         </state>
       </provider>
     </entry>

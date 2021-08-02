@@ -375,16 +375,15 @@ class Controller:
         try:
             print(str("XQ "+SHARP+positionVertical+",0;"))
             self.ser.write(str("XQ "+SHARP+positionVertical+",0;")) 
-            time.sleep(60.0)
+            time.sleep(6.0)
             print(str("XQ "+SHARP+positionHorizontal+",1;"))  
             self.ser.write(str("XQ "+SHARP+positionHorizontal+",1;"))
-            time.sleep(30.0)
+            time.sleep(3.0)
             rospy.loginfo("*** initialization done***")
             return 1
         except:
             rospy.loginfo("*** could not initialize Piezo motors ***")
             return 0
-
 
 
     def define_target(self):
@@ -467,13 +466,13 @@ def main():
 
         if control.state == MOVE and control.target.ready == True:
             print("target ready, start movement...")
-            control.SendAbsolutePosition('A', control.mm2counts_us_motor(control.target.x))
-            time.sleep(0.01)
-            control.SendAbsolutePosition('B', control.mm2counts_us_motor(control.target.y))
-            time.sleep(0.01)
             control.SendAbsolutePosition('C', control.mm2counts_piezomotor(-control.target.piezo[0]))
             time.sleep(0.01)
             control.SendAbsolutePosition('D', control.mm2counts_piezomotor(control.target.piezo[1]))
+            time.sleep(0.01)
+            control.SendAbsolutePosition('A', control.mm2counts_us_motor(control.target.x))
+            time.sleep(0.01)
+            control.SendAbsolutePosition('B', control.mm2counts_us_motor(control.target.y))
             time.sleep(0.01)
             control.save_position_A = control.mm2counts_us_motor(control.target.x)
             control.save_position_B = control.mm2counts_us_motor(control.target.y)
