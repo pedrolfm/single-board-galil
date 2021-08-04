@@ -317,6 +317,8 @@ class Controller:
     def SendAbsolutePosition(self,Channel,X):
         try:
             if self.AbsoluteMode:
+                self.ser.write(str("SH;"))
+                time.sleep(0.01)
                 self.ser.write(str("PT%s=1;" % Channel))
                 time.sleep(0.01)
                 self.ser.write(str("PA%s=%d;" % (Channel,X)))
@@ -425,7 +427,7 @@ def main():
             strg_temp = "(%02f, %02f, %02f)mm - (%02f, %02f)rad" % (control.target.ht_RAS_target[0,3],control.target.ht_RAS_target[1,3],control.target.ht_RAS_target[2,3],control.target.phi,control.target.teta)            
             control.TransferData1.data = strg_temp
             control.pub1.publish(control.TransferData1)
-            time.sleep(10)
+            time.sleep(1)
 #           strg_temp = "No Connection"+control.zTransReady+"-"
             control.TransferData2.data = "zFrame" + str(control.zTransReady)
             control.pub2.publish(control.TransferData2)
