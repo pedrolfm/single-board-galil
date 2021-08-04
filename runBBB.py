@@ -377,16 +377,15 @@ class Controller:
         try:
             print(str("XQ "+SHARP+positionVertical+",0;"))
             self.ser.write(str("XQ "+SHARP+positionVertical+",0;")) 
-            time.sleep(60.0)
+            time.sleep(6.0)
             print(str("XQ "+SHARP+positionHorizontal+",1;"))  
             self.ser.write(str("XQ "+SHARP+positionHorizontal+",1;"))
-            time.sleep(30.0)
+            time.sleep(3.0)
             rospy.loginfo("*** initialization done***")
             return 1
         except:
             rospy.loginfo("*** could not initialize Piezo motors ***")
             return 0
-
 
 
     def define_target(self):
@@ -452,12 +451,19 @@ def main():
                 rospy.loginfo("US motor not ready")
                 control.state = IDLE
 
+
+        # IMPORTANT: due to the hardware implementation, the axis y is in oposite direction to the motor direction (channel A).
+        # The same thing happens to channel C
+        # Axis X is channel B, same direction
+        # Axis Y is channel A, oposite direction
+
+
         if control.state == TARGET and control.zTransReady:
             if control.define_target():
                 rospy.loginfo("Target set, waiting for command")
-                rospy.loginfo("Movement axis A: %f mm -  %f counts" % (control.target.x,control.mm2counts_us_motor(control.target.x)))
-                rospy.loginfo("Movement axis B: %f mm -  %f counts" % (control.target.y,control.mm2counts_us_motor(control.target.y)))
-                rospy.loginfo("Movement axis C: %f mm -  %f counts" % (-control.target.piezo[0],control.mm2counts_piezomotor(-control.target.piezo[0])))
+                rospy.loginfo("Movement axis A: %f mm -  %f counts" % (control.target.y,-control.mm2counts_us_motor(control.target.y)))
+                rospy.loginfo("Movement axis B: %f mm -  %f counts" % (control.target.x,control.mm2counts_us_motor(control.target.x)))
+                rospy.loginfo("Movement axis C: %f mm -  %f counts" % (control.target.piezo[0],control.mm2counts_piezomotor(-control.target.piezo[0])))
                 rospy.loginfo("Movement axis D: %f mm -  %f counts" % (control.target.piezo[1],control.mm2counts_piezomotor(control.target.piezo[1])))
                 control.state = IDLE
                 control.target.ready = True
@@ -469,22 +475,20 @@ def main():
 
         if control.state == MOVE and control.target.ready == True:
             print("target ready, start movement...")
-            control.SendAbsolutePosition('A', control.mm2counts_us_motor(control.target.x))
-            time.sleep(0.01)
-            control.SendAbsolutePosition('B', control.mm2counts_us_motor(control.target.y))
-            time.sleep(0.01)
             control.SendAbsolutePosition('C', control.mm2counts_piezomotor(-control.target.piezo[0]))
             time.sleep(0.01)
             control.SendAbsolutePosition('D', control.mm2counts_piezomotor(control.target.piezo[1]))
             time.sleep(0.01)
-            control.save_position_A = control.mm2counts_us_motor(control.target.x)
-            control.save_position_B = control.mm2counts_us_motor(control.target.y)
+            control.SendAbsolutePosition('A', -control.mm2counts_us_motor(control.target.y))
+            time.sleep(0.01)
+            control.SendAbsolutePosition('B', control.mm2counts_us_motor(control.target.x))
+            time.sleep(0.01)
+            control.save_position_A = control.mm2counts_us_motor(-control.target.y)
+            control.save_position_B = control.mm2counts_us_motor(control.target.x)
             control.save_position_C = control.mm2counts_piezomotor(-control.target.piezo[0])
             control.save_position_D = control.mm2counts_piezomotor(control.target.piezo[1])
             control.target.ready = False
             control.state = IDLE
-            rospy.loginfo("Sent inputs to Galil: A=%f, B=%f, C=%f, D=%f counts" % (control.mm2counts_us_motor(control.target.x),control.mm2counts_us_motor(control.target.y),control.mm2counts_piezomotor(control.target.piezo[0]),control.mm2counts_piezomotor(control.target.piezo[1])))
-
 
 
 if __name__ == '__main__':
