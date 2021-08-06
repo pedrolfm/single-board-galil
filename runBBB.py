@@ -10,22 +10,25 @@ from std_msgs.msg import Int16MultiArray
 from ros_igtl_bridge.msg import igtlpoint, igtltransform, igtlstring
 from utils import Target
 
+#states:
 IDLE = 0
 INIT = 1
 TARGET = 2
 MOVE = 3
+
 PIEZO_INIT_VERTICAL = 0
 PIEZO_INIT_HORIZONTAL = 0
 SHARP = chr(35)
 
+# relationship between encoder counts and mm:
 US_MM_2_COUNT = 2000.0/2.5349
-
 PE_MM_2_COUNT = 500 #5500.0/16.51
 
 class Controller:
 
     def __init__(self):
 
+        # ROS Topics:
         rospy.Subscriber('IGTL_STRING_IN', igtlstring, self.callbackString)
         rospy.Subscriber('IGTL_TRANSFORM_IN', igtltransform, self.callbackTransformation)
         self.pub1 = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
@@ -34,7 +37,8 @@ class Controller:
         self.galilStatus = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
 
         rospy.init_node('talker', anonymous=True)
-        # Define the variables
+
+        # Define the variables for openigtlink
         self.TransferData1 = igtlstring()
         self.TransferData1.name = "statusTarget"
         self.TransferData2 = igtlstring()
@@ -44,9 +48,8 @@ class Controller:
         self.galilStatusData = igtlstring()
         self.galilStatusData.name = "status"
 
-
+        #Variables:
         self.status = 0
-
         self.CartesianPositionA = 0
         self.CartesianPositionB = 0
         self.OrientationA = 0
@@ -64,25 +67,23 @@ class Controller:
         self.save_position_B = 0
         self.save_position_C = 0
         self.save_position_D = 0
+
+
     def mm2counts_us_motor(self,distance):
-        # 1 US motor rotation = 500 counts = 0.0998 inches =  2.53492 mm
-        print(distance)
         return int(US_MM_2_COUNT*distance)
 
     def counts2mm_us_motor(self,counts):
-        # 1 US motor rotation = 500 counts = 0.0998 inches =  2.53492 mm
-        print(distance)
         return int((1.0/US_MM_2_COUNT)*counts)
 
     def mm2counts_piezomotor(self,distance):
-        # Still need to define the best relationship
         return int(PE_MM_2_COUNT*distance)
 
     def counts2mm_piezomotor(self,counts):
-        # Still need to define the best relationship
         return int((1.0/PE_MM_2_COUNT)*counts)
 
-####################CALLBACKS
+######################################################
+# ROS topic callbacks:
+######################################################
     def callbackString(self, data):
         rospy.loginfo(rospy.get_caller_id() + 'I heard %s', data.name)
         if data.name == "INIT":
@@ -92,7 +93,6 @@ class Controller:
         elif data.data == "MOVE":
             self.state = MOVE
         elif data.data == "SERIAL":
-#            self.open_connection()
             self.reconnect()
         else:
             self.state = IDLE
@@ -125,7 +125,10 @@ class Controller:
         else:
             self.state = IDLE
             rospy.loginfo('Invalid message, returning to IDLE state')
-#########################################
+
+##################################################################
+
+
 
     def quaternion2ht(self,quat,pos):
         H = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
@@ -188,7 +191,6 @@ class Controller:
                return 0
         time.sleep(0.5)
         self.ser.write(str("DPA=%d\r" % self.save_position_A))
-        print(str("DPA=%d\r" % self.save_position_A))
         time.sleep(0.1)
         self.ser.write(str("DPB=%d\r" % self.save_position_B))
         time.sleep(0.1)
@@ -199,6 +201,7 @@ class Controller:
         return 1
     
     def getFTSWstatus(self):
+        # This function asks Galil the footswitch status
         self.ser.flushInput()
         time.sleep(0.05)
         try:
@@ -324,11 +327,10 @@ class Controller:
                 self.ser.write(str("PA%s=%d;" % (Channel,X)))
                 return 1
             else:
-                print("*** PA not available ***")
+                rospy.loginfo("*** PA not available ***")
                 return 0
-
         except:
-            print("*** could not send command ***")
+            rospy.loginfo("*** could not send command ***")
             return 0
 
 
@@ -363,22 +365,22 @@ class Controller:
 
     def init_us_motors(self):
         try:
-            print("XQ "+SHARP+"HUSA\n")
+            rospy.loginfo("XQ "+SHARP+"HUSA\n")
             self.ser.write("XQ "+SHARP+"HUSA;")
             time.sleep(20.0)
-            print("XQ "+SHARP+"HUSB\n")
+            rospy.loginfo("XQ "+SHARP+"HUSB\n")
             self.ser.write("XQ "+SHARP+"HUSB;")
-            print("DONE INIT...")
+            rospy.loginfo("DONE INIT...")
         except:
-            print("NO INIT...")
+            rospy.loginfo("NO INIT...")
         return
     
     def init_piezo(self,positionHorizontal,positionVertical):
         try:
-            print(str("XQ "+SHARP+positionVertical+",0;"))
+            rospy.loginfo(str("XQ "+SHARP+positionVertical+",0;"))
             self.ser.write(str("XQ "+SHARP+positionVertical+",0;")) 
             time.sleep(6.0)
-            print(str("XQ "+SHARP+positionHorizontal+",1;"))  
+            rospy.loginfo(str("XQ "+SHARP+positionHorizontal+",1;"))
             self.ser.write(str("XQ "+SHARP+positionHorizontal+",1;"))
             time.sleep(3.0)
             rospy.loginfo("*** initialization done***")
@@ -403,11 +405,12 @@ def myhook():
     recsys.exit()
 
 def main():
-#    rospy.init_node('SmartTemplate')
+
     rospy.loginfo('Welcome to the Smart Template controller\n')
 
     control = Controller()
     time.sleep(3)
+
     control.state = IDLE
     control.open_connection()
     control.SetAbsoluteMotion('A')
@@ -415,7 +418,7 @@ def main():
     control.SetAbsoluteMotion('C')
     control.SetAbsoluteMotion('D')
 
-
+    #TODO: check if it is necessary
     if control.check_controller()==0:
         rospy.loginfo('Check Galil controller setup\n')
 
@@ -483,6 +486,8 @@ def main():
             time.sleep(0.01)
             control.SendAbsolutePosition('B', control.mm2counts_us_motor(control.target.x))
             time.sleep(0.01)
+
+            # Save that in case Galil is shutdown
             control.save_position_A = control.mm2counts_us_motor(-control.target.y)
             control.save_position_B = control.mm2counts_us_motor(control.target.x)
             control.save_position_C = control.mm2counts_piezomotor(-control.target.piezo[0])
