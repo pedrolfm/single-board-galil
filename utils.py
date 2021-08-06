@@ -42,15 +42,17 @@ class Target:
         # Define the matrices to transform the target from RAS frame to robot frame
         rotation = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 0.0 1.0 0.0 ; 0.0 -1.0 0.0 0.0; 0.0 0.0 0.0 1.0')
         translation = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 107.0 ; 0.0 0.0 1.0 -114; 0.0 0.0 0.0 1.0')
+        rotation2 = numpy.matrix('-1.0 0.0 0.0 0.0; 0.0 -1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
         self.ht_RAS_zframe = zframe_matrix
 
         #define the piezo motor positions based on the desired angle
         self.define_position_piezo()
 
         # Transformation matrix:
-        inv_ht_RAS_zFrame = numpy.linalg.inv(translation*self.ht_RAS_zframe*rotation)
+        inv_ht_RAS_zFrame = numpy.linalg.inv(translation*self.ht_RAS_zframe*rotation*rotation2)
         self.ht_zframe_target = inv_ht_RAS_zFrame*self.ht_RAS_target
 
+        print(self.ht_zframe_target)
 
         #Compensate the bias due to the piezo motion and angulation:
         diff_horizontal = self.ht_zframe_target[2,3]*numpy.tan(self.teta)
