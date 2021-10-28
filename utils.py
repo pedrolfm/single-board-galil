@@ -55,11 +55,11 @@ class Target:
         print(self.ht_zframe_target)
 
         #Compensate the bias due to the piezo motion and angulation:
-        diff_horizontal = self.ht_zframe_target[2,3]*numpy.tan(self.teta)
-        diff_vertical = self.ht_zframe_target[2, 3] * numpy.tan(self.phi)
+        diff_horizontal = self.ht_zframe_target[2,3]*numpy.tan(self.phi)
+        diff_vertical = self.ht_zframe_target[2, 3] * numpy.tan(self.teta)
 
         # Define the positions:
-        self.x = self.ht_zframe_target[0,3] + self.piezo[0] + diff_horizontal
+        self.x = self.ht_zframe_target[0,3] + self.piezo[1] + diff_horizontal
         self.y = self.ht_zframe_target[1,3] + diff_vertical
         self.z = self.ht_zframe_target[2,3]
 
@@ -72,7 +72,10 @@ class Target:
         self.teta = numpy.arctan2(-self.ht_RAS_target_angle[2,0],numpy.sqrt(self.ht_RAS_target_angle[0,0]*self.ht_RAS_target_angle[0,0]+self.ht_RAS_target_angle[1,0]*self.ht_RAS_target_angle[1,0]))
         self.gamma = numpy.arctan2(self.ht_RAS_target_angle[1,0]/numpy.cos(self.teta),self.ht_RAS_target_angle[0,0]/numpy.cos(self.teta))
         self.phi = numpy.arctan2(self.ht_RAS_target_angle[2,1]/numpy.cos(self.teta),self.ht_RAS_target_angle[2,2]/numpy.cos(self.teta))
-
+        print("angles")
+        print(self.teta)
+        print(self.gamma)
+        print(self.phi)
         return
 
 

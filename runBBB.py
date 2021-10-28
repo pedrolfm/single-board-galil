@@ -202,18 +202,23 @@ class Controller:
     
     def getFTSWstatus(self):
         # This function asks Galil the footswitch status
-        self.ser.flushInput()
-        time.sleep(0.05)
         try:
+            self.ser.flushInput()
+            time.sleep(0.1)
             self.ser.write(str("MG @IN[1];"))
             time.sleep(0.1)
+            bytesToRead = self.ser.inWaiting()
+            print(bytesToRead)
+            data_temp = self.ser.read(bytesToRead-4)
+            print("what do we receive?")
+            print(data_temp)
         except:
             print("*** could not send command ***")
             self.status = 0
             self.galilStatusData.data = "No Galil connection"
             return
-        bytesToRead = self.ser.inWaiting()
-        data_temp = self.ser.read(bytesToRead-3)
+        print("===")
+        print(data_temp)
         if (float(data_temp) == 1):
             self.status = 1
             self.galilStatusData.data = "FTSW OFF"
@@ -227,17 +232,18 @@ class Controller:
         return 
 
     def getMotorPosition(self):
-        self.ser.flushInput()
-        time.sleep(0.05)
         try:
+            self.ser.flushInput()
+            time.sleep(0.5)
             self.ser.write(str("TP;"))
             time.sleep(0.1)
+            bytesToRead = self.ser.inWaiting()
+            data_temp = self.ser.read(bytesToRead-3)
+            print(data_temp)
         except:
             print("*** could not send command ***")
             self.status = 0
-            return 0
-        bytesToRead = self.ser.inWaiting()
-        data_temp = self.ser.read(bytesToRead-3)
+            return str(0)
         return data_temp
     
 
@@ -425,18 +431,18 @@ def main():
     while 1: #not rospy.is_shutdown():
 
         while control.state == IDLE:
-            rospy.loginfo("*** waiting 2 ***")
+            print("test")
             strg_temp = "(%02f, %02f, %02f)mm - (%02f, %02f)rad" % (control.target.ht_RAS_target[0,3],control.target.ht_RAS_target[1,3],control.target.ht_RAS_target[2,3],control.target.phi,control.target.teta)            
             control.TransferData1.data = strg_temp
             control.pub1.publish(control.TransferData1)
-            time.sleep(1)
+            time.sleep(2)
 #           strg_temp = "No Connection"+control.zTransReady+"-"
             control.TransferData2.data = "zFrame" + str(control.zTransReady)
             control.pub2.publish(control.TransferData2)
 
             #Load information
             strg_temp = control.getMotorPosition()
-            control.motorsData.data = strg_temp#str(control.target.y) + "#" + str(control.target.x) + "#" + str(control.target.piezo[1]) + "#" + str(control.target.piezo[0])
+            control.motorsData.data = strg_temp #str(control.target.y) + "#" + str(control.target.x) + "#" + str(control.target.piezo[1]) + "#" + str(control.target.piezo[0])
             control.motors.publish(control.motorsData)
             control.getFTSWstatus()
             control.galilStatus.publish(control.galilStatusData)
