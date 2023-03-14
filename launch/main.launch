@@ -1,0 +1,11 @@
+<launch>
+<!-- start the bridge -->
+   <!--param name="RIB_server_ip" value="" type="str"/-->
+   <param name="RIB_port" value="18944" type="int"/>
+   <param name="RIB_type" value="server" type="str"/>
+   <node pkg="ros_igtl_bridge" type="ros_igtl_bridge_node" name="ros_igtl_bridge_node" output="screen">
+   </node>
+
+    <node pkg="single-board-galil" type="runBBB.py" name="main" output="screen">
+    </node>
+</launch>
