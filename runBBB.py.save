@@ -17,6 +17,8 @@ INIT = 1
 TARGET = 2
 MOVE = 3
 MOVING = 4
+ABORT = 5
+
 
 PIEZO_INIT_VERTICAL = 0
 PIEZO_INIT_HORIZONTAL = 0
@@ -273,14 +275,11 @@ class Controller:
         else:
             print("*** could not properly send command ***")
             return 0
-
     def abortMovement(self):
         try:
             self.ser.write(str("ST ABCD;"))
             time.sleep(0.01)
-            self.state = IDLE
-            self.status = 3
-            self.target.ready = False
+            self.state = ABORT
         except:
             print("*** could not send command ***")
             return 0
@@ -457,10 +456,9 @@ def main():
     control.controlState.publish(control.stateData)
     
     while 1: #not rospy.is_shutdown():
-        print(control.state)
-        print(control.status)
 
-        while control.state == IDLE:
+        
+while control.state == IDLE:
 
             # control.stateData.data = "No"
             # control.controlState.publish(control.stateData)
@@ -512,8 +510,6 @@ def main():
             strg_temp = control.getMotorPosition()
             current_position = strg_temp.split(", ")
             control.getFTSWstatus()
-            print("Pedro - test")
-            print(control.status)
             if control.status == 2:
                 if int(current_position[1])>=(100+control.mm2counts_us_motor(control.target.x)) or int(current_position[1])<=(-100+control.mm2counts_us_motor(control.target.x)):
                     control.state = MOVE
@@ -534,7 +530,6 @@ def main():
                     control.controlState.publish(control.stateData)
                     control.state = IDLE
                     control.target.ready = False
- 
 
         if control.state == INIT:
 

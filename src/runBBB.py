@@ -16,6 +16,7 @@ INIT = 1
 TARGET = 2
 MOVE = 3
 MOVING = 4
+ABORT = 5
 
 PIEZO_INIT_VERTICAL = 0
 PIEZO_INIT_HORIZONTAL = 0
@@ -36,6 +37,9 @@ class Controller:
         self.pub2 = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
         self.motors = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
         self.galilStatus = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
+        self.movementStatus = rospy.Publisher('IGTL_STRING_OUT', igtlstring, queue_size=10)
+
+
 
         rospy.init_node('talker', disable_signals=True, anonymous=True)
 
@@ -48,6 +52,10 @@ class Controller:
         self.motorsData.name = "motorPosition"
         self.galilStatusData = igtlstring()
         self.galilStatusData.name = "status"
+        self.movementStatusData = igtlstring()
+        self.movementStatusData.name = "movementStatus"
+
+
 
         #Variables:
         self.status = 0
@@ -56,6 +64,7 @@ class Controller:
         self.OrientationA = 0
         self.OrientationB = 0
         self.state = IDLE
+        self.slicerState = "No Movement"
         self.MotorsReady = 0
         self.targetRAS = numpy.matrix('1.0 0.0 0.0 0.0; 0.0 1.0 0.0 0.0 ; 0.0 0.0 1.0 0.0; 0.0 0.0 0.0 1.0')
         self.receivedTarget = "no target"
@@ -96,6 +105,8 @@ class Controller:
             self.state = MOVE
         elif data.data == "SERIAL":
             self.reconnect()
+        elif data.tada == "ABORT"
+            self.state = ABORT
         else:
             self.state = IDLE
  #           rospy.loginfo('Invalid message, returning to IDLE state')
@@ -431,15 +442,20 @@ def main():
     #TODO: check if it is necessary
     if control.check_controller()==0:
         rospy.loginfo('Check Galil controller setup\n')
-    
-    
+
+    control.slicerState = 0
     while 1: #not rospy.is_shutdown():
+
+        control.movementStatusData.data = control.slicerStatus
+        control.movementStatus.publish(control.movementStatusData)
 
         while control.state == IDLE:
             strg_temp = "(%.2f, %.2f, %.2f)mm - (%.2f, %.2f)rad" % (control.target.ht_RAS_target[0,3],control.target.ht_RAS_target[1,3],control.target.ht_RAS_target[2,3],control.target.phi,control.target.teta)            
             control.TransferData1.data = strg_temp
             control.pub1.publish(control.TransferData1)
-            
+            control.movementStatusData.data = control.slicerStatus
+            control.movementStatus.publish(control.movementStatusData)
+
             try:
                 time.sleep(1)
             except KeyboardInterrupt:
@@ -472,7 +488,10 @@ def main():
                 control.getFTSWstatus()
                 control.galilStatus.publish(control.galilStatusData)
 
-
+        if control.state == ABORT:
+            control.ser.write("ST;")
+            rospy.loginfo("Movement aborted")
+            control.state = IDLE
 
         if control.state == MOVING:
             time.sleep(3)
@@ -494,6 +513,7 @@ def main():
                     control.target.ready = True
                 else:
                     rospy.loginfo("movement done.")
+                    control.slicerState = "Movement done"
                     rospy.loginfo(current_position)
                     control.state = IDLE
                     control.target.ready = False
@@ -530,6 +550,7 @@ def main():
                 control.target.ready = True
                 rospy.loginfo("Target ready")
                 rospy.loginfo(control.target.ht_RAS_target)
+                control.slicerState = "No movement"
             else:
                 rospy.loginfo("Check target location and try again")
                 control.state = IDLE
@@ -545,6 +566,7 @@ def main():
             time.sleep(0.05)
             control.SendAbsolutePosition('B', control.mm2counts_us_motor(control.target.x))
             time.sleep(0.05)
+            control.slicerState = "Waiting movement"
 
             # Save that in case Galil is shutdown
             control.save_position_A = control.mm2counts_us_motor(control.target.y)
